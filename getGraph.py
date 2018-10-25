@@ -20,17 +20,24 @@ response = stub.DescribeGraph(request, metadata=[('macaroon', macaroon)])
 # https://networkx.github.io/documentation/stable/reference/readwrite/multiline_adjlist.html
 adjListDic = defaultdict(list)
 
+# Init adjList
+for node in response.nodes:
+    adjListDic[node.pub_key] = []
+
+print("Got " + str(len(response.edges)) + " edges")
+print("Got " + str(len(response.nodes)) + " nodes")
+
 for edge in response.edges:
     # Build adj list from edges
     adjListDic[edge.node1_pub].append([edge.node2_pub, edge.capacity])
     adjListDic[edge.node2_pub].append([edge.node1_pub, edge.capacity])
 
 # Write the adjlist file
-f = open('lightningMLAdjList.txt', 'w')
+f = open('lightningAdjList.txt', 'w')
 for (nodePubKey, adjList) in adjListDic.items():
     # Write the name of the node and the number of edges
     f.write(nodePubKey + " " + str(len(adjList)) + "\n")
-    for adj in adjList:
+    for index, adj in enumerate(adjList):
         # Write the other node in the edge and the edge capacity
         f.write(adj[0] + " {'capacity':" + str(adj[1]/2) + "}\n")
 
