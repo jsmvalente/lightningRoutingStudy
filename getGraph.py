@@ -26,7 +26,7 @@ for edge in response.edges:
     adjListDic[edge.node2_pub].append([edge.node1_pub, edge.capacity])
 
 # Write the adjlist file
-f = open('lightningMLAdjList', 'w')
+f = open('lightningMLAdjList.txt', 'w')
 for (nodePubKey, adjList) in adjListDic.items():
     # Write the name of the node and the number of edges
     f.write(nodePubKey + " " + str(len(adjList)) + "\n")
@@ -37,7 +37,7 @@ for (nodePubKey, adjList) in adjListDic.items():
 f.close()
 
 # Write a file with the correspondence between the nodes alias and pubkeys
-f = open('nodeAlias.text', 'w')
+f = open('nodeAlias.txt', 'w')
 for node in response.nodes:
     f.write(node.pub_key + " " + node.alias + "\n")
 
