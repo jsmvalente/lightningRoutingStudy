@@ -9,7 +9,10 @@ macaroon = codecs.encode(open('/home/joao/.lnd/data/chain/bitcoin/mainnet/admin.
 os.environ['GRPC_SSL_CIPHER_SUITES'] = 'HIGH+ECDSA'
 cert = open('/home/joao/.lnd/tls.cert', 'rb').read()
 ssl_creds = grpc.ssl_channel_credentials(cert)
-channel = grpc.secure_channel('localhost:10009', ssl_creds)
+channel = grpc.secure_channel('localhost:10009', ssl_creds, options=[
+        ('grpc.max_send_message_length', 50 * 1024 * 1024),
+        ('grpc.max_receive_message_length', 50 * 1024 * 1024)
+        ])
 
 # Creating a stub and requesting the client for the latest network graph
 stub = lnrpc.LightningStub(channel)
