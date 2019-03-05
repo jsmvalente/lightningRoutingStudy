@@ -36,25 +36,65 @@ f.close()
 for e in G.edges:
     capacity = G[e[0]][e[1]]["capacity"]
     balance = capacity/2
-    G[e[0]][e[1]]["balance1"] = balance
-    G[e[0]][e[1]]["balance2"] = balance
+    # Create two dic entries with the ids of the nodes and their balances in the channel
+    G[e[0]][e[1]][e[0]] = balance
+    G[e[0]][e[1]][e[1]] = balance
 
 
 # Simulate with n payments between two nodes
-nodes = G.nodes
-nPayments = 100
+nodes = list(G.nodes)
+nPayments = 500
 
 # Use gaussian probability distribution for random payment amounts
-mu, sigma = 250001, 3000 # mean and standard deviation
-paymentAmounts = np.random.normal(mu, sigma, nPayments)
+# mean and standard deviation
+mu, sigma = 250001, 6000
+paymentAmounts = np.random.normal(mu, sigma, nPayments).tolist()
+paymentTryCount = 0
+paymentSuccessCount = 0
 
-for i in range(0, nPayments):
+# Run until there are no more payments to send
+while paymentAmounts:
+
+    paymentTryCount += 1
 
     # Choose a random source
-    source = random.randint(0, len(nodes) - 1)
+    source = nodes[random.randint(0, len(nodes) - 1)]
 
     # Choose a random destination
     while True:
-        dest = random.randint(0, len(nodes) - 1)
+        dest = nodes[random.randint(0, len(nodes) - 1)]
         if dest != source:
             break
+
+    # Find shortest path between source and destination
+    shortest_path = nx.shortest_path(G, source, dest)
+
+    # Find if the payment can go through
+    enoughCapacity = True
+    for i in range(0, len(shortest_path) - 2):
+
+        node1 = shortest_path[i]
+        node2 = shortest_path[i+1]
+
+        if G[node1][node2][node1] < paymentAmounts[0]:
+            enoughCapacity = False
+            break
+
+    # Change the state of the channels in the path
+    if enoughCapacity:
+
+        paymentSuccessCount += 1
+
+        amount = paymentAmounts.pop(0)
+
+        for i in range(0, len(shortest_path) - 2):
+
+            node1 = shortest_path[i]
+            node2 = shortest_path[i + 1]
+
+            G[node1][node2][node1] -= amount
+            G[node1][node2][node2] += amount
+
+
+print("Count: " + str(paymentTryCount))
+print("Success: " + str(paymentSuccessCount))
