@@ -3,6 +3,7 @@ import grpc
 import os
 import rpc_pb2 as ln
 import rpc_pb2_grpc as lnrpc
+import numpy as np
 from collections import defaultdict
 
 macaroon = codecs.encode(open('/home/joao/.lnd/data/chain/bitcoin/mainnet/admin.macaroon', 'rb').read(), 'hex')
@@ -35,10 +36,16 @@ for node in graphResponse.nodes:
 # Build adj list from edges
 for edge in graphResponse.edges:
 
-    # Verify adjacency are right - get all channels between two nodes (1)
-    if(edge.node1_pub == "02c91d6aa51aa940608b497b6beebcb1aec05be3c47704b682b3889424679ca490" or edge.node1_pub == "0311cad0edf4ac67298805cf4407d94358ca60cd44f2e360856f3b1c088bcd4782"):
-        if(edge.node2_pub == "02c91d6aa51aa940608b497b6beebcb1aec05be3c47704b682b3889424679ca490" or edge.node2_pub == "0311cad0edf4ac67298805cf4407d94358ca60cd44f2e360856f3b1c088bcd4782"):
-            print(edge)
+    # Find block in which the funding transaction associated with this channel is present,
+    # this are the first 3 bytes of edge.channel_id
+    # https://api.lightning.community/#channeledge
+    uchannel_id = np.uint64(edge.channel_id)
+
+    # Convert to hex and add padding to 16 bytes
+    channel_idHex = hex(uchannel_id)
+    channel_idHexPadd = '0x' + channel_idHex[2:].zfill(16)
+    blockHeightHex = channel_idHexPadd[:8]
+    blockHeight = int(blockHeightHex, 16)
 
     # Find if this edge already exists
     if any(adj[0] == edge.node2_pub for adj in adjListDic[edge.node1_pub]):
@@ -53,19 +60,18 @@ for edge in graphResponse.edges:
                 break
     # IF it doesn't exist we add a new adjacency
     else:
-        adjListDic[edge.node1_pub].append([edge.node2_pub, edge.capacity])
-        adjListDic[edge.node2_pub].append([edge.node1_pub, edge.capacity])
+        adjListDic[edge.node1_pub].append([edge.node2_pub, edge.capacity, blockHeight])
+        adjListDic[edge.node2_pub].append([edge.node1_pub, edge.capacity, blockHeight])
 
 
 # Write the adjlist file
-f = open('lightningAdjList.txt', 'w')
-repeated = 0
+f = open('adjList.txt', 'w')
 for (nodePubKey, adjList) in adjListDic.items():
     # Write the name of the node and the number of edges
     f.write(nodePubKey + " " + str(len(adjList)) + "\n")
     for index, adj in enumerate(adjList):
         # Write the other node in the edge and the edge capacity
-        f.write(adj[0] + " {'capacity':" + str(adj[1]) + "}\n")
+        f.write(adj[0] + " {'capacity':" + str(adj[1]) + ", 'funding_block':" + str(adj[2]) + "}\n")
 
 f.close()
 
@@ -77,12 +83,3 @@ for node in graphResponse.nodes:
 f.close()
 
 print("Saved " + str(len(graphResponse.nodes)) + " nodes and " + str(len(graphResponse.edges)) + " edges.")
-
-# Verify if adjacency are right (2)
-
-for adj in adjListDic["02c91d6aa51aa940608b497b6beebcb1aec05be3c47704b682b3889424679ca490"]:
-    if adj[0] == "0311cad0edf4ac67298805cf4407d94358ca60cd44f2e360856f3b1c088bcd4782":
-        print(adj)
-for adj in adjListDic["0311cad0edf4ac67298805cf4407d94358ca60cd44f2e360856f3b1c088bcd4782"]:
-    if adj[0] == "02c91d6aa51aa940608b497b6beebcb1aec05be3c47704b682b3889424679ca490":
-        print(adj)

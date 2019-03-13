@@ -1,9 +1,10 @@
 import networkx as nx
 import random
 import numpy as np
+import routing
 
-# Open adjencency list file and build the directed graph
-f = open("../scripts/lightningAdjList.txt", 'rb')
+# Open adjencency list file and build the undirected graph
+f = open("adjList.txt", 'rb')
 G = nx.read_multiline_adjlist(f)
 f.close()
 
@@ -13,14 +14,9 @@ G = max(nx.connected_component_subgraphs(G), key=len)
 print("Number of nodes: " + str(G.number_of_nodes()))
 print("Number of edges: " + str(G.number_of_edges()))
 
-# Check if capacity is correct
-n1 = "02c91d6aa51aa940608b497b6beebcb1aec05be3c47704b682b3889424679ca490"
-n2 = "0311cad0edf4ac67298805cf4407d94358ca60cd44f2e360856f3b1c088bcd4782"
-print(G[n1][n2])
-
 # Read alias file and create a pub_key -> alias dic
 aliasDic = {}
-f = open("../scripts/nodeAlias.txt", 'r')
+f = open("nodeAlias.txt", 'r')
 
 lines = f.read().splitlines()
 
@@ -45,56 +41,65 @@ for e in G.edges:
 nodes = list(G.nodes)
 nPayments = 500
 
+print("Trying " + str(nPayments) + " payments")
+
 # Use gaussian probability distribution for random payment amounts
+
 # mean and standard deviation
-mu, sigma = 250001, 6000
+mu, sigma = 250000, 6000
 paymentAmounts = np.random.normal(mu, sigma, nPayments).tolist()
-paymentTryCount = 0
-paymentSuccessCount = 0
+Gcopy = G.copy()
+sourceDestination = []
+paymentShortestPathCount = 0
+paymentRoutingCount = 0
 
-# Run until there are no more payments to send
-while paymentAmounts:
-
-    paymentTryCount += 1
-
+# Find source and destination nodes
+for _ in range(0, nPayments):
     # Choose a random source
     source = nodes[random.randint(0, len(nodes) - 1)]
 
-    # Choose a random destination
+    # Choose a random destination thats different from the source
     while True:
         dest = nodes[random.randint(0, len(nodes) - 1)]
         if dest != source:
             break
 
+    sourceDestination += [(source, dest)]
+
+# Run shortest path until there are no more (source, destination)
+for i in range(0, nPayments):
+
     # Find shortest path between source and destination
-    shortest_path = nx.shortest_path(G, source, dest)
+    shortest_path = nx.shortest_path(G, sourceDestination[i][0], sourceDestination[i][1])
 
     # Find if the payment can go through
-    enoughCapacity = True
     for i in range(0, len(shortest_path) - 2):
 
         node1 = shortest_path[i]
         node2 = shortest_path[i+1]
 
-        if G[node1][node2][node1] < paymentAmounts[0]:
-            enoughCapacity = False
-            break
+        if G[node1][node2][node1] > paymentAmounts[0]:
 
-    # Change the state of the channels in the path
-    if enoughCapacity:
+            # Change the state of the channels in the path
+            paymentShortestPathCount += 1
 
-        paymentSuccessCount += 1
+            amount = paymentAmounts[i]
 
-        amount = paymentAmounts.pop(0)
+            for i in range(0, len(shortest_path) - 2):
+                node1 = shortest_path[i]
+                node2 = shortest_path[i + 1]
 
-        for i in range(0, len(shortest_path) - 2):
+                G[node1][node2][node1] -= amount
+                G[node1][node2][node2] += amount
+                break
 
-            node1 = shortest_path[i]
-            node2 = shortest_path[i + 1]
+print("Shortest Path Success: " + str(paymentShortestPathCount))
 
-            G[node1][node2][node1] -= amount
-            G[node1][node2][node2] += amount
+# Run routing until there are no more (source, destination) pairs
+routing = routing.Routing(Gcopy)
+for i in range(0, nPayments):
 
+    if routing.newPayment(Gcopy, sourceDestination[i][0], sourceDestination[i][1], paymentAmounts[i]):
+        paymentRoutingCount += 1
 
-print("Count: " + str(paymentTryCount))
-print("Success: " + str(paymentSuccessCount))
+print("Routing Success: " + str(paymentRoutingCount))
