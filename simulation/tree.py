@@ -33,7 +33,7 @@ class Tree:
         for bit in bitAddress:
 
             # If the bit is logical 1
-            if bit:
+            if int(bit):
                 # If the helper pointer is not null, meaning this path was crossed before
                 if helperPointer.right:
                     # Continue going down the tree
@@ -62,7 +62,7 @@ class Tree:
 
         return
 
-    def getAddressFromNeighbour(self, neighbourAddress):
+    def getSimilarAddress(self, neighbourAddress):
 
         # Get the address in bit form, LSB first
         byteAddress = ipaddress.IPv4Address(neighbourAddress).packed
@@ -73,9 +73,8 @@ class Tree:
         for bit in bitAddress:
 
             # If the bit is logical 1
-            if bit:
+            if int(bit):
                 helperPointer = helperPointer.right
-
             # If the bit is logical 0
             else:
                 helperPointer = helperPointer.left
@@ -89,23 +88,41 @@ class Tree:
             exploreRoot = exploreRoot.parent
 
             # Check if other side (searchHead) is null
-            if bit:
+            if int(bit):
                 searchHead = exploreRoot.parent.left
 
                 if not searchHead:
                     address = ("0" + bitAddressMSB[index+1:]).zfill(32)
-                    ipv4Address = ipaddress.IPv4Address()
+                    ipv4Address = ipaddress.IPv4Address(BitArray(bin=address).bytes)
                     return str(ipv4Address)
             else:
                 searchHead = exploreRoot.parent.right
 
                 if not searchHead:
                     address = ("1" + bitAddressMSB[index+1:]).zfill(32)
-                    ipv4Address = ipaddress.IPv4Address()
+                    ipv4Address = ipaddress.IPv4Address(BitArray(bin=address).bytes)
                     return str(ipv4Address)
 
             # If the search head is not null we try to find new addresses using a DFS
+            def dfs(address, node):
 
+                # Check if the node we are visiting has children.
+                # If it doesnt we found a new address.
+                if not node.left:
+                    return ("0" + address).zfill(32)
+                elif not node.right:
+                    return ("1" + address).zfill(32)
 
+                leftChildResult = dfs(("0" + address), node.left)
+
+                if leftChildResult:
+                    return leftChildResult
+
+                rightChildResult = dfs(("1" + address), node.right)
+
+                if rightChildResult:
+                    return rightChildResult
+
+            dfs(bitAddressMSB[index+1:], searchHead)
 
         return

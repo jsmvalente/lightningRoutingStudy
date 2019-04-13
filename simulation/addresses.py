@@ -5,15 +5,18 @@ class Addresses:
     def __init__(self):
         self.addressTree = tree.Tree()
 
-    def newAddress(self, neighbourAddress):
+    def suggestNewAddress(self, neighbourAddress):
+            # Use the address that's closer to the neighbour address
+            newAddress = self.addressTree.getSimilarAddress(neighbourAddress)
 
-        # Address book is empty and we need to add the first address
-        if self.addressTree.isEmpty():
-            firstAddress = '0.0.0.0'
+            if newAddress:
+                return newAddress
+            else:
+                # Had an error while looking up a new address and the return was null
+                return None
 
-            self.addressTree.addAddress(firstAddress)
+    def addAddress(self, address):
+        self.addressTree.addAddress(address)
 
-            return firstAddress
+        return
 
-        # Use the address that's closer to the neighbour address
-        return self.addressTree.getAddressFromNeighbour(neighbourAddress)

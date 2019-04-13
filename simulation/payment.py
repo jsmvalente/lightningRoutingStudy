@@ -12,28 +12,29 @@ class Payment:
         return
 
 
-    #Create n payments to be used in the simulation
-    def createPayments(self, n, nodes):
 
-        payments = []
+#Create n payments to be used in the simulation
+def createPayments(n, nodes):
 
-        # Use gaussian probability distribution for random payment amounts
-        # mean and standard deviation
-        mu, sigma = 250000, 6000
-        paymentAmounts = np.random.normal(mu, sigma, n).tolist()
+    payments = []
 
-        # Find source and destination nodes
-        for i in range(0, n):
-            # Choose a random source
-            source = nodes[random.randint(0, len(nodes) - 1)]
+    # Use gaussian probability distribution for random payment amounts
+    # mean and standard deviation
+    mu, sigma = 250000, 6000
+    paymentAmounts = np.random.normal(mu, sigma, n).tolist()
 
-            # Choose a random destination that is different from the source
-            while True:
-                dest = nodes[random.randint(0, len(nodes) - 1)]
-                if dest != source:
-                    break
+    # Find source and destination nodes
+    for i in range(0, n):
+        # Choose a random source
+        source = nodes[random.randint(0, len(nodes) - 1)]
 
-            # Append the new payment to payments list
-            payments.append(Payment(paymentAmounts[i], source, dest))
+        # Choose a random destination that is different from the source
+        while True:
+            dest = nodes[random.randint(0, len(nodes) - 1)]
+            if dest != source:
+                break
 
-        return payments
+        # Append the new payment to payments list
+        payments.append(Payment(paymentAmounts[i], source, dest))
+
+    return payments

@@ -30,6 +30,11 @@ class DistributedRouting:
 
         nodeBlocks.sort(key=blockSort)
 
+        # Setup the initial address and save it
+        G.nodes[nodeBlocks[0]["firstNeighbourNode"]]["address"] = "0.0.0.0"
+
+        self.addresses.addAddress("0.0.0.0")
+
         # Get an LN address for each node
         for nodeBlock in nodeBlocks:
 
@@ -37,7 +42,9 @@ class DistributedRouting:
             node = nodeBlock["node"]
 
             # Assign the LN address to the node
-            G[node]["address"] = self.addresses.newAddress(G[nodeBlock["firstNeighbourNode"]]["address"])
+            G.nodes[node]["address"] = self.addresses.suggestNewAddress(G.nodes[nodeBlock["firstNeighbourNode"]]["address"])
+            # Save this address
+            self.addresses.addAddress(G.nodes[node]["address"])
 
             # Update the routing tables after each address assignment
             self.__updateRoutingTables()
