@@ -1,7 +1,7 @@
 import networkx as nx
-import random
-import numpy as np
-import routing
+import distributedrouting
+import shortestpathrouting
+import payment
 
 # Open adjencency list file and build the undirected graph
 f = open("adjList.txt", 'rb')
@@ -40,66 +40,26 @@ for e in G.edges:
 # Simulate with n payments between two nodes
 nodes = list(G.nodes)
 nPayments = 500
-
+payments = payment.createPayments(500, nodes)
 print("Trying " + str(nPayments) + " payments")
 
-# Use gaussian probability distribution for random payment amounts
-
-# mean and standard deviation
-mu, sigma = 250000, 6000
-paymentAmounts = np.random.normal(mu, sigma, nPayments).tolist()
+# Get a copy of G to be used in the second routing scheme
 Gcopy = G.copy()
-sourceDestination = []
-paymentShortestPathCount = 0
-paymentRoutingCount = 0
 
-# Find source and destination nodes
-for _ in range(0, nPayments):
-    # Choose a random source
-    source = nodes[random.randint(0, len(nodes) - 1)]
+# Init routing schemes
+shortPathRouting = shortestpathrouting.ShortestPathRouting(G)
+distRouting = distributedrouting.DistributedRouting(Gcopy)
 
-    # Choose a random destination thats different from the source
-    while True:
-        dest = nodes[random.randint(0, len(nodes) - 1)]
-        if dest != source:
-            break
+# Simulate payments
+shortPathRoutingCount = 0
+distRoutingCount = 0
+for payment in payments:
+    if shortPathRouting.simulatePayment(payment.source, payment.destination, payment.amount):
+        shortPathRoutingCount += 1
 
-    sourceDestination += [(source, dest)]
+    if distRouting.simulatePayment(payment.source, payment.destination, payment.amount):
+        distRoutingCount += 1
 
-# Run shortest path until there are no more (source, destination)
-for i in range(0, nPayments):
 
-    # Find shortest path between source and destination
-    shortest_path = nx.shortest_path(G, sourceDestination[i][0], sourceDestination[i][1])
-
-    # Find if the payment can go through
-    for i in range(0, len(shortest_path) - 2):
-
-        node1 = shortest_path[i]
-        node2 = shortest_path[i+1]
-
-        if G[node1][node2][node1] > paymentAmounts[0]:
-
-            # Change the state of the channels in the path
-            paymentShortestPathCount += 1
-
-            amount = paymentAmounts[i]
-
-            for i in range(0, len(shortest_path) - 2):
-                node1 = shortest_path[i]
-                node2 = shortest_path[i + 1]
-
-                G[node1][node2][node1] -= amount
-                G[node1][node2][node2] += amount
-                break
-
-print("Shortest Path Success: " + str(paymentShortestPathCount))
-
-# Run routing until there are no more (source, destination) pairs
-routing = routing.Routing(Gcopy)
-for i in range(0, nPayments):
-
-    if routing.newPayment(Gcopy, sourceDestination[i][0], sourceDestination[i][1], paymentAmounts[i]):
-        paymentRoutingCount += 1
-
-print("Routing Success: " + str(paymentRoutingCount))
+print("Shortest Path Routing had a " + str(shortPathRoutingCount/nPayments) + "% of success")
+print("Distributed Routing had a " + str(distRoutingCount/nPayments) + "% of success")

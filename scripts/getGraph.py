@@ -18,12 +18,18 @@ channel = grpc.secure_channel('localhost:10009', ssl_creds, options=[
 # Creating a stub and requesting the client for the latest network graph and graph info
 stub = lnrpc.LightningStub(channel)
 graphRequest = ln.ChannelGraphRequest(include_unannounced=True)
-graphInfoRequest = ln.NetworkInfoRequest()
+networkInfoRequest = ln.NetworkInfoRequest()
+infoRequest = ln.request = ln.GetInfoRequest()
 graphResponse = stub.DescribeGraph(graphRequest, metadata=[('macaroon', macaroon)])
-graphInfoResponse = stub.GetNetworkInfo(graphInfoRequest, metadata=[('macaroon', macaroon)])
+networkInfoResponse = stub.GetNetworkInfo(networkInfoRequest, metadata=[('macaroon', macaroon)])
+infoResponse = stub.GetInfo(infoRequest, metadata=[('macaroon', macaroon)])
 
-# Print network info
-print("Graph Info: \n\n" + str(graphInfoResponse))
+# GetNetworkInfo returns some basic stats about the known channel graph from the point of view of the node.
+print("Network Info: \n\n" + str(networkInfoResponse))
+
+# GetInfo returns general information concerning the lightning node including
+# it’s identity pubkey, alias, the chains it is connected to, and information concerning the number of open+pending channels.
+print("Info: \n\n" + str(infoResponse))
 
 # Treat the response and build a multi line adjancency list from it
 # https://networkx.github.io/documentation/stable/reference/readwrite/multiline_adjlist.html
