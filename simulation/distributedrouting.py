@@ -11,18 +11,23 @@ class DistributedRouting:
         nodes = list(G.nodes)
         nodeBlocks = []
 
-        # Sort nodes chronologically (timestamp of first seen on blockchain)
+        # Sort nodes chronologically (timestamp of first seen on blockchain) and give them None addresses
         for node in nodes:
 
             firstBlock = 999999999
+            firstNeighbour = ""
             for neighbour, channelData in G[node].items():
 
                 fundingBlock = channelData["funding_block"]
 
                 if fundingBlock < firstBlock:
                     firstBlock = fundingBlock
+                    firstNeighbour =  neighbour
 
-            nodeBlocks += [{"node": node, "firstNeighbourNode": neighbour, "firstBlock": firstBlock}]
+            nodeBlocks += [{"node": node, "firstNeighbourNode": firstNeighbour, "firstBlock": firstBlock}]
+
+            # Set the node address to None
+            G.nodes[node]["address"] = None
 
         # Sort the nodes by their funding transaction order in the blockchain
         def blockSort(data):
@@ -30,9 +35,8 @@ class DistributedRouting:
 
         nodeBlocks.sort(key=blockSort)
 
-        # Setup the initial address and save it
+        # Setup the initial address for the first transaction manually and save it
         G.nodes[nodeBlocks[0]["firstNeighbourNode"]]["address"] = "0.0.0.0"
-
         self.addresses.addAddress("0.0.0.0")
 
         # Get an LN address for each node
@@ -42,9 +46,17 @@ class DistributedRouting:
             node = nodeBlock["node"]
 
             # Assign the LN address to the node
-            G.nodes[node]["address"] = self.addresses.suggestNewAddress(G.nodes[nodeBlock["firstNeighbourNode"]]["address"])
-            # Save this address
-            self.addresses.addAddress(G.nodes[node]["address"])
+            neighbourAddress = G.nodes[nodeBlock["firstNeighbourNode"]]["address"]
+            # If the neighbour doesn't have an address yet get him a random one
+            if not neighbourAddress:
+                neighbourAddress = self.addresses.getNewRandomAddress()
+                self.addresses.addAddress(neighbourAddress)
+
+            # Get an address related to our neighbour if we don't have one
+            if not G.nodes[node]["address"]:
+                G.nodes[node]["address"] = self.addresses.getNewRelatedAddress(neighbourAddress)
+                # Save this address
+                self.addresses.addAddress(G.nodes[node]["address"])
 
             # Update the routing tables after each address assignment
             self.__updateRoutingTables()

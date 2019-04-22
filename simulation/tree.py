@@ -9,6 +9,7 @@ class Tree:
             self.right = None
             self.left = None
             self.parent = None
+            self.address = None
 
     def __init__(self):
         # The root corresponds to the LSB
@@ -23,7 +24,8 @@ class Tree:
 
         return False
 
-    def addAddress(self, address):
+    # Returns true if the address is present in the tree, false if it isn't
+    def addressExists(self, address):
 
         # Get the address in bit form, lest least significant bit first
         byteAddress = ipaddress.IPv4Address(address).packed
@@ -31,6 +33,34 @@ class Tree:
 
         helperPointer = self.root
         for bit in bitAddress:
+
+            # If the bit is logical 1
+            if int(bit):
+                if helperPointer.right:
+                    # Continue going down the tree
+                    helperPointer = helperPointer.right
+                else:
+                    return False
+
+            # If the bit is logical 0
+            else:
+                if helperPointer.left:
+                    # Continue going down the tree
+                    helperPointer = helperPointer.left
+                else:
+                    return False
+
+        return True
+
+
+    def addAddress(self, address):
+
+        # Get the address in bit form, lest least significant bit first
+        byteAddress = ipaddress.IPv4Address(address).packed
+        bitAddress = BitArray(bytes=byteAddress).bin[::-1]
+
+        helperPointer = self.root
+        for index, bit in enumerate(bitAddress):
 
             # If the bit is logical 1
             if int(bit):
@@ -42,6 +72,7 @@ class Tree:
                 else:
                     # Build the tree further down
                     newNode = self.Node()
+                    newNode.address = (bitAddress[:index+1])[::-1]
                     newNode.parent = helperPointer
                     helperPointer.right = newNode
                     helperPointer = helperPointer.right
@@ -56,13 +87,14 @@ class Tree:
                 else:
                     # Build the tree further down
                     newNode = self.Node()
+                    newNode.address = (bitAddress[:index+1])[::-1]
                     newNode.parent = helperPointer
                     helperPointer.left = newNode
                     helperPointer = helperPointer.left
 
         return
 
-    def getSimilarAddress(self, neighbourAddress):
+    def getRelatedAddress(self, neighbourAddress):
 
         # Get the address in bit form, LSB first
         byteAddress = ipaddress.IPv4Address(neighbourAddress).packed
@@ -89,40 +121,53 @@ class Tree:
 
             # Check if other side (searchHead) is null
             if int(bit):
-                searchHead = exploreRoot.parent.left
+                searchHead = exploreRoot.left
 
                 if not searchHead:
-                    address = ("0" + bitAddressMSB[index+1:]).zfill(32)
+                    address = ("0" + exploreRoot.address).zfill(32)
                     ipv4Address = ipaddress.IPv4Address(BitArray(bin=address).bytes)
                     return str(ipv4Address)
             else:
-                searchHead = exploreRoot.parent.right
+                searchHead = exploreRoot.right
 
                 if not searchHead:
-                    address = ("1" + bitAddressMSB[index+1:]).zfill(32)
+                    address = ("1" + exploreRoot.address).zfill(32)
                     ipv4Address = ipaddress.IPv4Address(BitArray(bin=address).bytes)
                     return str(ipv4Address)
 
             # If the search head is not null we try to find new addresses using a DFS
-            def dfs(address, node):
+            def dfs(node):
 
-                # Check if the node we are visiting has children.
+                address = node.address
+
+                # Don't do DFS for leaves and their parents
+                if len(address) == 32:
+                    return
+
+                # Check if the node we are visiting has children on either side.
                 # If it doesnt we found a new address.
                 if not node.left:
                     return ("0" + address).zfill(32)
                 elif not node.right:
                     return ("1" + address).zfill(32)
 
-                leftChildResult = dfs(("0" + address), node.left)
+                leftChildResult = dfs(node.left)
 
                 if leftChildResult:
                     return leftChildResult
 
-                rightChildResult = dfs(("1" + address), node.right)
+                rightChildResult = dfs(node.right)
 
                 if rightChildResult:
                     return rightChildResult
 
-            dfs(bitAddressMSB[index+1:], searchHead)
+
+            # DFS to try and find free addresses
+            dfsResult = dfs(searchHead)
+
+            # If we found an address through the DFS we return it
+            if dfsResult:
+                ipv4Address = ipaddress.IPv4Address(BitArray(bin=dfsResult).bytes)
+                return str(ipv4Address)
 
         return
