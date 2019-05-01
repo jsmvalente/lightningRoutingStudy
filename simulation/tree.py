@@ -10,6 +10,7 @@ class Tree:
             self.left = None
             self.parent = None
             self.address = None
+            self.info = None
 
     def __init__(self):
         # The root corresponds to the LSB
@@ -24,12 +25,71 @@ class Tree:
 
         return False
 
+    # Save the info associated with an address
+    def setAddressInfo(self, address, info):
+
+        # Get the address in bit form
+        byteAddress = ipaddress.IPv4Address(address).packed
+        bitAddress = BitArray(bytes=byteAddress).bin
+
+        helperPointer = self.root
+        for bit in bitAddress:
+
+            # If the bit is logical 1
+            if int(bit):
+                if helperPointer.right:
+                    # Continue going down the tree
+                    helperPointer = helperPointer.right
+                else:
+                    return None
+
+            # If the bit is logical 0
+            else:
+                if helperPointer.left:
+                    # Continue going down the tree
+                    helperPointer = helperPointer.left
+                else:
+                    return None
+
+        # Set the info in the right node
+        helperPointer.info = info
+
+        return 0
+
+    # Return the address info
+    def getAddressInfo(self, address):
+
+        # Get the address in bit form
+        byteAddress = ipaddress.IPv4Address(address).packed
+        bitAddress = BitArray(bytes=byteAddress).bin
+
+        helperPointer = self.root
+        for bit in bitAddress:
+
+            # If the bit is logical 1
+            if int(bit):
+                if helperPointer.right:
+                    # Continue going down the tree
+                    helperPointer = helperPointer.right
+                else:
+                    return None
+
+            # If the bit is logical 0
+            else:
+                if helperPointer.left:
+                    # Continue going down the tree
+                    helperPointer = helperPointer.left
+                else:
+                    return None
+
+        return helperPointer.info
+
     # Returns true if the address is present in the tree, false if it isn't
     def addressExists(self, address):
 
-        # Get the address in bit form, lest least significant bit first
+        # Get the address in bit form
         byteAddress = ipaddress.IPv4Address(address).packed
-        bitAddress = BitArray(bytes=byteAddress).bin[::-1]
+        bitAddress = BitArray(bytes=byteAddress).bin
 
         helperPointer = self.root
         for bit in bitAddress:
@@ -55,9 +115,9 @@ class Tree:
 
     def addAddress(self, address):
 
-        # Get the address in bit form, lest least significant bit first
+        # Get the address in bit form
         byteAddress = ipaddress.IPv4Address(address).packed
-        bitAddress = BitArray(bytes=byteAddress).bin[::-1]
+        bitAddress = BitArray(bytes=byteAddress).bin
 
         helperPointer = self.root
         for index, bit in enumerate(bitAddress):
@@ -72,7 +132,7 @@ class Tree:
                 else:
                     # Build the tree further down
                     newNode = self.Node()
-                    newNode.address = (bitAddress[:index+1])[::-1]
+                    newNode.address = bitAddress[:index+1]
                     newNode.parent = helperPointer
                     helperPointer.right = newNode
                     helperPointer = helperPointer.right
@@ -87,7 +147,7 @@ class Tree:
                 else:
                     # Build the tree further down
                     newNode = self.Node()
-                    newNode.address = (bitAddress[:index+1])[::-1]
+                    newNode.address = bitAddress[:index+1]
                     newNode.parent = helperPointer
                     helperPointer.left = newNode
                     helperPointer = helperPointer.left
@@ -96,9 +156,9 @@ class Tree:
 
     def getRelatedAddress(self, neighbourAddress):
 
-        # Get the address in bit form, LSB first
+        # Get the address in bit form
         byteAddress = ipaddress.IPv4Address(neighbourAddress).packed
-        bitAddress = BitArray(bytes=byteAddress).bin[::-1]
+        bitAddress = BitArray(bytes=byteAddress).bin
 
         # Navigate to the neighbour address in the tree
         helperPointer = self.root
@@ -112,9 +172,9 @@ class Tree:
                 helperPointer = helperPointer.left
 
         # Navigate up the tree and reverse the address to map the path backwards
-        bitAddressMSB = bitAddress[::-1]
+        bitAddressLSB = bitAddress[::-1]
         exploreRoot = helperPointer
-        for index, bit in enumerate(bitAddressMSB):
+        for index, bit in enumerate(bitAddressLSB):
 
             # Go up in the tree by one node
             exploreRoot = exploreRoot.parent
@@ -124,14 +184,14 @@ class Tree:
                 searchHead = exploreRoot.left
 
                 if not searchHead:
-                    address = ("0" + exploreRoot.address).zfill(32)
+                    address = (exploreRoot.address + "0").ljust(32, "0")
                     ipv4Address = ipaddress.IPv4Address(BitArray(bin=address).bytes)
                     return str(ipv4Address)
             else:
                 searchHead = exploreRoot.right
 
                 if not searchHead:
-                    address = ("1" + exploreRoot.address).zfill(32)
+                    address = (exploreRoot.address + "1").ljust(32, "0")
                     ipv4Address = ipaddress.IPv4Address(BitArray(bin=address).bytes)
                     return str(ipv4Address)
 
@@ -147,9 +207,9 @@ class Tree:
                 # Check if the node we are visiting has children on either side.
                 # If it doesnt we found a new address.
                 if not node.left:
-                    return ("0" + address).zfill(32)
+                    return (address + "0").ljust(32, "0")
                 elif not node.right:
-                    return ("1" + address).zfill(32)
+                    return (address + "1").ljust(32, "0")
 
                 leftChildResult = dfs(node.left)
 

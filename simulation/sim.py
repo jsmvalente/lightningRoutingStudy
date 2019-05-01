@@ -54,6 +54,7 @@ distRouting = distributedrouting.DistributedRouting(Gcopy)
 shortPathRoutingCount = 0
 distRoutingCount = 0
 for payment in payments:
+    print(str(payment.amount))
     if shortPathRouting.simulatePayment(payment.source, payment.destination, payment.amount):
         shortPathRoutingCount += 1
 

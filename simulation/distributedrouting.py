@@ -1,11 +1,13 @@
-import addresses
+import LNAddresses
+import routingTables
 
 class DistributedRouting:
 
     def __init__(self, G):
 
         self.G = G
-        self.addresses = addresses.Addresses()
+        self.addresses = LNAddresses.LNAddresses()
+        self.routingTables = routingTables.routingTables()
 
         # Start by giving each node an LN address
         nodes = list(G.nodes)
@@ -22,12 +24,9 @@ class DistributedRouting:
 
                 if fundingBlock < firstBlock:
                     firstBlock = fundingBlock
-                    firstNeighbour =  neighbour
+                    firstNeighbour = neighbour
 
             nodeBlocks += [{"node": node, "firstNeighbourNode": firstNeighbour, "firstBlock": firstBlock}]
-
-            # Set the node address to None
-            G.nodes[node]["address"] = None
 
         # Sort the nodes by their funding transaction order in the blockchain
         def blockSort(data):
@@ -36,37 +35,74 @@ class DistributedRouting:
         nodeBlocks.sort(key=blockSort)
 
         # Setup the initial address for the first transaction manually and save it
-        G.nodes[nodeBlocks[0]["firstNeighbourNode"]]["address"] = "0.0.0.0"
-        self.addresses.addAddress("0.0.0.0")
+        self.addresses.addLNAddress("0.0.0.0", nodeBlocks[0]["firstNeighbourNode"])
 
         # Get an LN address for each node
         for nodeBlock in nodeBlocks:
 
             # Get the key for the node so we can reference it in the graph
-            node = nodeBlock["node"]
+            nodeKey = nodeBlock["node"]
 
             # Assign the LN address to the node
-            neighbourAddress = G.nodes[nodeBlock["firstNeighbourNode"]]["address"]
+            neighbourAddress = self.addresses.getLNAddress(nodeBlock["firstNeighbourNode"])
             # If the neighbour doesn't have an address yet get him a random one
             if not neighbourAddress:
-                neighbourAddress = self.addresses.getNewRandomAddress()
-                self.addresses.addAddress(neighbourAddress)
+                neighbourAddress = self.addresses.getNewRandomLNAddress()
+                self.addresses.addLNAddress(neighbourAddress, nodeKey)
 
             # Get an address related to our neighbour if we don't have one
-            if not G.nodes[node]["address"]:
-                G.nodes[node]["address"] = self.addresses.getNewRelatedAddress(neighbourAddress)
+            if not self.addresses.getLNAddress(nodeKey):
                 # Save this address
-                self.addresses.addAddress(G.nodes[node]["address"])
+                self.addresses.addLNAddress(self.addresses.getNewRelatedLNAddress(neighbourAddress), nodeKey)
 
-            # Update the routing tables after each address assignment
-            self.__updateRoutingTables()
+        # Add routing tables in order of appearance
+        for nodeBlock in nodeBlocks:
+
+            nodeKey = nodeBlock["node"]
+            address = self.addresses.getLNAddress(nodeKey)
+
+            # Find the neighbours of the node so we can add added it to the routing tables
+            neighbourAddresses = []
+            for neighbour, channelData in G[nodeKey].items():
+                neighbourAddresses.append(self.addresses.getLNAddress(neighbour))
+
+            self.routingTables.addRoutingTable(address, neighbourAddresses)
+
+        # Simulate that sometime has passed and nodes have exchanged routing updates
+        for _ in range(50):
+            self.routingTables.exchangeRoutingUpdates()
 
         return
 
     # Verifies if a payment from the source to the destination with the specified amount would be successful
     def simulatePayment(self, source, destination, amount):
-        return False
 
-    # Does a round of routing table updates in a random node order
-    def __updateRoutingTables(self):
-        return
+        path = self.routingTables.getRoutingPath(self.addresses.getLNAddress(source), self.addresses.getLNAddress(destination))
+
+        # Get the LN addresses in the path in key for
+        for i in range(0, len(path)):
+            path[i] = self.addresses.getAddress(path[i])
+
+        # Find if the payment can go through
+        for i in range(0, len(path) - 2):
+
+            node1 = path[i]
+            node2 = path[i + 1]
+
+            # If one of the channels has not enough capacity the path is not valid
+            if self.G[node1][node2][node1] < amount:
+                return False
+
+
+        # Change the state of the channels in the path
+        for i in range(0, len(path) - 2):
+            node1 = path[i]
+            node2 = path[i + 1]
+
+            self.G[node1][node2][node1] -= amount
+            self.G[node1][node2][node2] += amount
+
+        for _ in range(5):
+            self.routingTables.exchangeRoutingUpdates()
+
+        return True

@@ -14,7 +14,6 @@ class ShortestPathRouting:
         shortest_path = nx.shortest_path(self.G, source, destination)
 
         # Find if the payment can go through
-        validPath = True
         for i in range(0, len(shortest_path) - 2):
 
             node1 = shortest_path[i]

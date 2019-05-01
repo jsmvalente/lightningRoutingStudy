@@ -2,12 +2,14 @@ import tree
 from random import getrandbits
 from ipaddress import IPv4Address
 
-class Addresses:
+class LNAddresses:
 
     def __init__(self):
         self.addressTree = tree.Tree()
+        self.addressesDic = {}
+        self.lnAddressesDic = {}
 
-    def getNewRandomAddress(self):
+    def getNewRandomLNAddress(self):
 
         # Get random addresses until we find one that doesn't is not used yet
         while True:
@@ -18,7 +20,7 @@ class Addresses:
             if not self.addressTree.addressExists(randomAddress):
                 return randomAddress
 
-    def getNewRelatedAddress(self, neighbourAddress):
+    def getNewRelatedLNAddress(self, neighbourAddress):
         # Use the address that's closer to the neighbour address
         newAddress = self.addressTree.getRelatedAddress(neighbourAddress)
 
@@ -28,9 +30,21 @@ class Addresses:
             # Had an error while looking up a new address and the return was null
             return None
 
-    def addAddress(self, address):
+    def addLNAddress(self, address, node):
         self.addressTree.addAddress(address)
+        self.lnAddressesDic[node] = address
+        self.addressesDic[address] = node
         print("Address '" + address + "' added to the database.")
 
         return
 
+
+    def getLNAddress(self, node):
+        try:
+            address = self.lnAddressesDic[node]
+            return address
+        except:
+            return None
+
+    def getAddress(self, lnAddress):
+        return self.addressesDic[lnAddress]
