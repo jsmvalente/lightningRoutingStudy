@@ -11,7 +11,7 @@ class routingTables:
     # Add a routing table
     def addRoutingTable(self, address, neighbours):
 
-        # Decalre a dic to serve as routing table for this node
+        # Declare a dic to serve as routing table for this node
         self.routingTables[address] = {}
 
         # Save the neighours of this node
@@ -29,15 +29,14 @@ class routingTables:
 
         print("Sharing routing updates")
 
-        # Get a random order to update the tables
+        # Get a random node order to update the tables
         addresses = list(self.routingTables.keys())
         random.shuffle(addresses)
-        loopCounter = 0
 
         for address in addresses:
             # Get the updates that are ready to be sent to the neighbours
             updateQueue = self.updateQueues[address]
-            # Get the neighbours
+            # Get the node neighbours
             neighbours = self.neighbours[address]
 
             # Loop through updates and apply them to the neighbours
@@ -51,15 +50,13 @@ class routingTables:
 
                     # Check if the neighbour already has this info and if the info is not about the neighbour,
                     # if not, add it to the neighbours updateQueue
-                    try:
-                        nextNode = neighbourTable[update]
-                    except KeyError:
-                        if update != address:
-                            neighbourTable[update] = address
-                            neighbourUpdateQueue.append(update)
+                    if update != address and update not in neighbourTable:
+                        neighbourTable[update] = address
+                        neighbourUpdateQueue.append(update)
 
-            loopCounter += 1
-            print("Updated " + str(loopCounter) + " nodes.")
+
+        for address in addresses:
+            print("Length routing table: " + str(len(self.routingTables[address])))
 
         return
 

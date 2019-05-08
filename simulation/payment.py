@@ -20,7 +20,7 @@ def createPayments(n, nodes):
 
     # Use gaussian probability distribution for random payment amounts
     # mean and standard deviation
-    mu, sigma = 5000, 1000
+    mu, sigma = 25000, 6000
     paymentAmounts = np.random.normal(mu, sigma, n).tolist()
 
     # Find source and destination nodes

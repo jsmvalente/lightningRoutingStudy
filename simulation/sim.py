@@ -39,8 +39,8 @@ for e in G.edges:
 
 # Simulate with n payments between two nodes
 nodes = list(G.nodes)
-nPayments = 500
-payments = payment.createPayments(500, nodes)
+nPayments = 300
+payments = payment.createPayments(nPayments, nodes)
 print("Trying " + str(nPayments) + " payments")
 
 # Get a copy of G to be used in the second routing scheme
@@ -51,16 +51,44 @@ shortPathRouting = shortestpathrouting.ShortestPathRouting(G)
 distRouting = distributedrouting.DistributedRouting(Gcopy)
 
 # Simulate payments
+result = 0
 shortPathRoutingCount = 0
+shortPathOverCap = 0
+shortPathNonExis = 0
+shortPathCumlLen = 0
 distRoutingCount = 0
+distRoutingOverCap = 0
+distRoutingNonExis = 0
+distPathCumlLen = 0
+
 for payment in payments:
-    print(str(payment.amount))
-    if shortPathRouting.simulatePayment(payment.source, payment.destination, payment.amount):
+    result = shortPathRouting.simulatePayment(payment.source, payment.destination, payment.amount)
+
+    if result == -1:
+        shortPathNonExis += 1
+    elif result == -2:
+        shortPathOverCap += 1
+    else:
+        shortPathCumlLen += result
         shortPathRoutingCount += 1
 
-    if distRouting.simulatePayment(payment.source, payment.destination, payment.amount):
+    result = distRouting.simulatePayment(payment.source, payment.destination, payment.amount)
+
+    if result == -1:
+        distRoutingNonExis += 1
+    elif result == -2:
+        distRoutingOverCap += 1
+    else:
+        distPathCumlLen += result
         distRoutingCount += 1
 
-
-print("Shortest Path Routing had a " + str(shortPathRoutingCount/nPayments) + "% of success")
-print("Distributed Routing had a " + str(distRoutingCount/nPayments) + "% of success")
+print("Shortest Path Routing:\n" +
+      "P(Success) = " + str(round((shortPathRoutingCount/nPayments)*100, 2)) + "%\n" +
+      "P(Overcap|Failed) = " + str(round((shortPathOverCap / (nPayments-shortPathRoutingCount)) * 100, 2)) + "%\n" +
+      "P(NonExis|Failed) = " + str(round((shortPathNonExis / (nPayments-shortPathRoutingCount)) * 100, 2)) + "%\n" +
+      "Average path length = " + str(round(shortPathCumlLen / shortPathRoutingCount, 2)) +
+      "\n\nDistributed Routing:\n" +
+      "P(Success) = " + str(round((distRoutingCount / nPayments) * 100, 2)) + "%\n" +
+      "P(Overcap|Failed) = " + str(round((distRoutingOverCap / (nPayments - distRoutingCount)) * 100, 2)) + "%\n" +
+      "P(NonExis|Failed) = " + str(round((distRoutingNonExis / (nPayments - distRoutingCount)) * 100, 2)) + "%\n" +
+      "Average path length = " + str(round(distPathCumlLen / distRoutingCount, 2)))

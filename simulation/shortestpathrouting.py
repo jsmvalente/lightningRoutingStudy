@@ -8,6 +8,8 @@ class ShortestPathRouting:
 
         return
 
+    # Simulate the payment and change the channel states accordingly. If the path is not valid return -2. If the payment
+    # was successful then return 0
     def simulatePayment(self, source, destination, amount):
 
         # Find shortest path between source and destination
@@ -21,7 +23,7 @@ class ShortestPathRouting:
 
             # If one of the channels has not enough capacity the path is not valid
             if self.G[node1][node2][node1] < amount:
-                return False
+                return -2
 
 
         # Change the state of the channels in the path
@@ -32,5 +34,5 @@ class ShortestPathRouting:
             self.G[node1][node2][node1] -= amount
             self.G[node1][node2][node2] += amount
 
-        return True
+        return len(shortest_path)
 

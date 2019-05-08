@@ -69,15 +69,21 @@ class DistributedRouting:
             self.routingTables.addRoutingTable(address, neighbourAddresses)
 
         # Simulate that sometime has passed and nodes have exchanged routing updates
-        for _ in range(50):
+        for _ in range(3):
             self.routingTables.exchangeRoutingUpdates()
 
         return
 
-    # Verifies if a payment from the source to the destination with the specified amount would be successful
+    # Simulate the payment and change the channel states accordingly. If the path was not found return 1.
+    # If the path is not valid (not enough capacity) return 2. If the payment was successful then return 0.
     def simulatePayment(self, source, destination, amount):
 
         path = self.routingTables.getRoutingPath(self.addresses.getLNAddress(source), self.addresses.getLNAddress(destination))
+
+        # Check if there is a path
+        if not path:
+            # If there isn't return -1
+            return -1
 
         # Get the LN addresses in the path in key for
         for i in range(0, len(path)):
@@ -91,7 +97,8 @@ class DistributedRouting:
 
             # If one of the channels has not enough capacity the path is not valid
             if self.G[node1][node2][node1] < amount:
-                return False
+                # If there isn't enough capacity on a path channel return -2
+                return -2
 
 
         # Change the state of the channels in the path
@@ -102,7 +109,6 @@ class DistributedRouting:
             self.G[node1][node2][node1] -= amount
             self.G[node1][node2][node2] += amount
 
-        for _ in range(5):
-            self.routingTables.exchangeRoutingUpdates()
+            #self.routingTables.exchangeRoutingUpdates()
 
-        return True
+        return len(path)
