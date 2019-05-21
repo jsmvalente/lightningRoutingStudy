@@ -2,6 +2,8 @@ import networkx as nx
 import distributedrouting
 import shortestpathrouting
 import payment
+import random
+import collections
 
 # Open adjencency list file and build the undirected graph
 f = open("adjList.txt", 'rb')
@@ -27,6 +29,19 @@ for line in lines:
 
 f.close()
 
+# Reduce the size of the graph while keeping its degree distribution so its easier to analyze
+# To do this we remove random nodes with % = to its degree probability
+
+# Remove nodes until there's only 500
+while G.number_of_nodes() > 200:
+    # Choose node to remove
+    randomNode = random.choice(list(G.nodes))
+    G.remove_node(randomNode)
+
+# Clean graph from smallest components
+print("Node removal broke graph into " + str(nx.number_connected_components(G)) + " connected components.")
+G = max(nx.connected_component_subgraphs(G), key=len)
+print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
 
 # Create channel state balances
 for e in G.edges:
