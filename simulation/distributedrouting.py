@@ -1,5 +1,7 @@
 import LNAddresses
 import random
+import networkx as nx
+import matplotlib.pyplot as plt
 from collections import defaultdict
 
 class DistributedRouting:
@@ -8,10 +10,10 @@ class DistributedRouting:
 
         self.G = G
         # Routing Tables:
-        #   → Node Address
-        #       → Destination
-        #           → Next Hop
-        #               Capacity: 1000
+        #   → Node Address:
+        #       → Destination:
+        #           (nextHop, maxCapacity)
+        #
         self.routingTables = defaultdict(dict)
         self.addresses = LNAddresses.LNAddresses()
         self.updateQueues = defaultdict(list)
@@ -51,7 +53,7 @@ class DistributedRouting:
             # Get the key for the node so we can reference it in the graph
             nodeKey = nodeBlock["node"]
 
-            # Assign the LN address to the node
+            # Assign the LN address to the neighbour node
             neighbourAddress = self.addresses.getLNAddress(nodeBlock["firstNeighbourNode"])
             # If the neighbour doesn't have an address yet get him a random one
             if not neighbourAddress:
@@ -63,11 +65,15 @@ class DistributedRouting:
                 # Save this address
                 self.addresses.addLNAddress(self.addresses.getNewRelatedLNAddress(neighbourAddress), nodeKey)
 
-        # Add routing tables in order of appearance
+            # Visualize graph
+            nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=16, label="Leftover LN")
+            plt.show()
+
+        # Add routing tables
         for node in nodes:
             nodeAddress = self.addresses.getLNAddress(node)
 
-            # Build the channels info dictionary
+            # Build the channels
             for neighbour, channelData in G[node].items():
                 neighbourNodeAddress = self.addresses.getLNAddress(neighbour)
                 self.channels[nodeAddress][neighbourNodeAddress] = channelData[neighbour]
@@ -87,8 +93,8 @@ class DistributedRouting:
 
         for neighbour in self.channels[address].keys():
 
-            self.routingTables[address][neighbour] = {neighbour: self.channels[address][neighbour]}
-            # Add nieghbour to node update queue, meaning we have new info on how to get to the neighbour
+            self.routingTables[address][neighbour] = (neighbour, self.channels[address][neighbour])
+            # Add neighbour to node update queue, meaning we have new info on how to get to the neighbour
             self.updateQueues[address].append(neighbour)
 
         return
@@ -99,23 +105,24 @@ class DistributedRouting:
 
         print("Sharing routing updates")
 
-        # Get a random node order to update the tables
+        # Get a random node order to update the tables. Use 1/5 of the nodes
         addresses = list(self.routingTables.keys())
         random.shuffle(addresses)
+        addresses = addresses[:int(len(addresses)/3)]
 
         for address in addresses:
 
             # Get the updates that are ready to be sent to the neighbours
             updateQueue = self.updateQueues[address]
+            routingTable = self.routingTables[address]
 
             print("Sharing " + address + " updates.")
 
             # Loop through updates and apply them to the neighbours
             print("updateQueue size: " + str(len(updateQueue)) + " updates")
             while len(updateQueue) > 0:
-                update = updateQueue.pop(0)
-                destination = update["destination"]
-                maxCapacity = update["maxCapacity"]
+                destination = updateQueue.pop(0)
+                nextHop = routingTable[destination]
 
                 # Share the table with the neighbours and update their table accordingly
                 for neighbour in self.channels[address].keys():
@@ -126,36 +133,33 @@ class DistributedRouting:
                         neighbourTable = self.routingTables[neighbour]
                         neighbourUpdateQueue = self.updateQueues[neighbour]
 
-                        # Find if we are a bottleneck to the path, if we are update the max capacity
-                        if self.channels[neighbour][address] < maxCapacity:
-                            maxCapacity = self.channels[neighbour][address]
+                        if destination not in neighbourTable:
+                            if nextHop[1] < self.channels[neighbour][address]:
+                                neighbourTable[destination] = (address, nextHop[1])
+                            else:
+                                neighbourTable[destination] = (address, self.channels[neighbour][address])
 
-                        # Get the neighbours next hop for a certain the update's destination
-                        try:
-                            hops = neighbourTable[destination]
-                        except KeyError:
-                            neighbourTable[destination] = {}
-                            hops = neighbourTable[destination]
-
-                        # If next hop address is already listed we change it according to the new info
-                        # If we have less than three addresses we also add the new next hop
-                        if address in hops.keys() or len(hops) < 3:
-                            hops[address] = maxCapacity
-                            neighbourUpdateQueue.append({"destination": destination, "maxCapacity": maxCapacity})
-                        # If the list already has 3 addresses only add the new next hop if its capacity its bigger
+                            neighbourUpdateQueue.append(destination)
                         else:
-                            minCapacity = 99999999999
-                            minCapacityAddress = None
-                            for hopAddress, capacity in hops.items():
-                                if capacity < minCapacity:
-                                    minCapacity = capacity
-                                    minCapacityAddress = hopAddress
+                            # Get the neighbours next hop for a certain the update's destination
+                            neighbourNextHop = neighbourTable[destination]
 
-                            if minCapacity < maxCapacity:
-                                del hops[minCapacityAddress]
-                                hops[address] = maxCapacity
-                                neighbourUpdateQueue.append({"destination": address, "maxCapacity": maxCapacity})
+                            # If we are updating the information on the same routing
+                            if neighbourNextHop[0] == address:
+                                if nextHop[1] < self.channels[neighbour][address]:
+                                    neighbourTable[destination] = (address, nextHop[1])
+                                else:
+                                    neighbourTable[destination] = (address, self.channels[neighbour][address])
+                            else:
+                                # If the new path is wider than the channel and the previous info
+                                if nextHop[1] > neighbourNextHop[1]:
+                                    if nextHop[1] < self.channels[neighbour][address]:
+                                        neighbourTable[destination] = (nextHop[0], nextHop[1])
+                                    else:
+                                        neighbourTable[destination] = (nextHop[0], self.channels[neighbour][address])
 
+                            if destination not in neighbourUpdateQueue:
+                                neighbourUpdateQueue.append(destination)
         return
 
     # Get a path from node A to node B by following the routing table information starting from A
@@ -168,15 +172,7 @@ class DistributedRouting:
         nextHopTable = self.routingTables[nextHop]
 
         while destination in nextHopTable.keys():
-            nextHops = nextHopTable[destination]
-
-            maxCapacity = 0
-            print(nextHops)
-            for address, capacity in nextHops.items():
-                if capacity > maxCapacity:
-                    maxCapacity = capacity
-                    nextHop = address
-
+            nextHop = nextHopTable[destination][0]
             path.append(nextHop)
             nextHopTable = self.routingTables[nextHop]
 
@@ -190,6 +186,8 @@ class DistributedRouting:
     # If the path is not valid (not enough capacity) return 2. If the payment was successful then return 0.
     def simulatePayment(self, source, destination, amount):
 
+        self.exchangeRoutingUpdates()
+
         sourceAddress = self.addresses.getLNAddress(source)
         destinationAddress = self.addresses.getLNAddress(destination)
 
@@ -197,33 +195,27 @@ class DistributedRouting:
 
         # Check if there is a path
         if not path:
-            # If there isn't return -1/USD 262.65
+            # If there isn't return -1
             return -1
 
-        # Get the LN addresses in the path in key for
-        for i in range(0, len(path)):
-            path[i] = self.addresses.getAddress(path[i])
-
         # Find if the payment can go through
-        for i in range(0, len(path) - 2):
+        for i in range(0, len(path) - 1):
 
             node1 = path[i]
             node2 = path[i + 1]
 
             # If one of the channels has not enough capacity the path is not valid
-            if self.G[node1][node2][node1] < amount:
+            if self.channels[node1][node2] < amount:
                 # If there isn't enough capacity on a path channel return -2
                 return -2
 
 
         # Change the state of the channels in the path
-        for i in range(0, len(path) - 2):
+        for i in range(0, len(path) - 1):
             node1 = path[i]
             node2 = path[i + 1]
 
-            self.G[node1][node2][node1] -= amount
-            self.G[node1][node2][node2] += amount
-
-            #self.routingTables.exchangeRoutingUpdates()
+            self.channels[node1][node2] -= amount
+            self.channels[node2][node1] += amount
 
         return len(path)

@@ -28,7 +28,7 @@ infoResponse = stub.GetInfo(infoRequest, metadata=[('macaroon', macaroon)])
 print("Network Info: \n\n" + str(networkInfoResponse))
 
 # GetInfo returns general information concerning the lightning node including
-# it’s identity pubkey, alias, the chains it is connected to, and information concerning the number of open+pending channels.
+# it's identity pubkey, alias, the chains it is connected to, and information concerning the number of open+pending channels.
 print("Info: \n\n" + str(infoResponse))
 
 # Treat the response and build a multi line adjancency list from it
@@ -84,7 +84,7 @@ f.close()
 # Write a file with the correspondence between the nodes alias and pubkeys
 f = open('nodeAlias.txt', 'w')
 for node in graphResponse.nodes:
-    f.write(node.pub_key + " " + node.alias + "\n")
+    f.write(node.pub_key + " " + (node.alias).encode('ascii', 'ignore').decode('ascii') + "\n")
 
 f.close()
 

@@ -1,9 +1,12 @@
 import networkx as nx
+import matplotlib.pyplot as plt
 import distributedrouting
 import shortestpathrouting
 import payment
 import random
-import collections
+
+nPayments = 300
+nNodes = 150
 
 # Open adjencency list file and build the undirected graph
 f = open("adjList.txt", 'rb')
@@ -28,12 +31,12 @@ for line in lines:
     aliasDic[pub_key] = alias
 
 f.close()
+plt.show()
+# Remove a fraction of the nodes so the network is easier to analyze
+# Since we are working with a scale-free network robustness to random node removals is expected
 
-# Reduce the size of the graph while keeping its degree distribution so its easier to analyze
-# To do this we remove random nodes with % = to its degree probability
-
-# Remove nodes until there's only 500
-while G.number_of_nodes() > 200:
+# Remove nodes until there are only nNodes
+while G.number_of_nodes() > nNodes:
     # Choose node to remove
     randomNode = random.choice(list(G.nodes))
     G.remove_node(randomNode)
@@ -42,6 +45,10 @@ while G.number_of_nodes() > 200:
 print("Node removal broke graph into " + str(nx.number_connected_components(G)) + " connected components.")
 G = max(nx.connected_component_subgraphs(G), key=len)
 print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
+
+# Visualize graph
+nx.draw(G, with_labels=True, font_size=6, label="Leftover LN")
+plt.show()
 
 # Create channel state balances
 for e in G.edges:
@@ -54,7 +61,6 @@ for e in G.edges:
 
 # Simulate with n payments between two nodes
 nodes = list(G.nodes)
-nPayments = 300
 payments = payment.createPayments(nPayments, nodes)
 print("Trying " + str(nPayments) + " payments")
 
@@ -77,6 +83,7 @@ distRoutingNonExis = 0
 distPathCumlLen = 0
 
 for payment in payments:
+    # Simulate the payment using shortest path routing
     result = shortPathRouting.simulatePayment(payment.source, payment.destination, payment.amount)
 
     if result == -1:
@@ -87,6 +94,7 @@ for payment in payments:
         shortPathCumlLen += result
         shortPathRoutingCount += 1
 
+    # Simulate the payment using distributed routing
     result = distRouting.simulatePayment(payment.source, payment.destination, payment.amount)
 
     if result == -1:

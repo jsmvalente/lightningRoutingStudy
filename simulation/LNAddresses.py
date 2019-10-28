@@ -20,6 +20,9 @@ class LNAddresses:
             if not self.addressTree.addressExists(randomAddress):
                 return randomAddress
 
+    def getAddressesDic(self):
+        return self.lnAddressesDic
+
     def getNewRelatedLNAddress(self, neighbourAddress):
         # Use the address that's closer to the neighbour address
         newAddress = self.addressTree.getRelatedAddress(neighbourAddress)
