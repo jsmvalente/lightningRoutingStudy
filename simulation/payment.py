@@ -3,6 +3,7 @@ import numpy as np
 
 class Payment:
 
+
     def __init__(self, amount, source, destination):
 
         self.amount = amount

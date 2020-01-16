@@ -113,5 +113,7 @@ print("Shortest Path Routing:\n" +
       "\n\nDistributed Routing:\n" +
       "P(Success) = " + str(round((distRoutingCount / nPayments) * 100, 2)) + "%\n" +
       "P(Overcap|Failed) = " + str(round((distRoutingOverCap / (nPayments - distRoutingCount)) * 100, 2)) + "%\n" +
-      "P(NonExis|Failed) = " + str(round((distRoutingNonExis / (nPayments - distRoutingCount)) * 100, 2)) + "%\n" +
-      "Average path length = " + str(round(distPathCumlLen / distRoutingCount, 2)))
+      "P(NonExis|Failed) = " + str(round((distRoutingNonExis / (nPayments - distRoutingCount)) * 100, 2)) + "%")
+
+if distRoutingCount:
+    print("Average path length = " + str(round(distPathCumlLen / distRoutingCount, 2)))

@@ -1,5 +1,6 @@
 import LNAddresses
 import random
+import hop
 import networkx as nx
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -12,11 +13,10 @@ class DistributedRouting:
         # Routing Tables:
         #   → Node Address:
         #       → Destination:
-        #           (nextHop, maxCapacity)
+        #           hop(nextHop, maxCapacity)
         #
         self.routingTables = defaultdict(dict)
         self.addresses = LNAddresses.LNAddresses()
-        self.updateQueues = defaultdict(list)
         self.channels = defaultdict(dict)
 
         # Start by giving each node an LN address
@@ -80,9 +80,8 @@ class DistributedRouting:
 
             self.addRoutingTable(nodeAddress)
 
-        # Simulate that sometime has passed and nodes have exchanged routing updates
-        for _ in range(3):
-            self.exchangeRoutingUpdates()
+        # Simulate that sometime has passed and nodes have exchanged n routing updates
+        self.exchangeRoutingUpdates(5)
 
         print("Initial routing setup done.")
 
@@ -92,74 +91,73 @@ class DistributedRouting:
     def addRoutingTable(self, address):
 
         for neighbour in self.channels[address].keys():
-
-            self.routingTables[address][neighbour] = (neighbour, self.channels[address][neighbour])
-            # Add neighbour to node update queue, meaning we have new info on how to get to the neighbour
-            self.updateQueues[address].append(neighbour)
+            self.routingTables[address][neighbour] = hop.Hop(neighbour, self.channels[address][neighbour])
 
         return
 
-    # In a random node order, share the routing table of a node with its neighbours and update the
-    # neighbours routing tables accordingly
-    def exchangeRoutingUpdates(self):
+    # Share updates between n pairs of nodes
+    def exchangeRoutingUpdates(self, n):
 
-        print("Sharing routing updates")
+        # print("Sharing " + str(n) + " routing updates")
 
-        # Get a random node order to update the tables. Use 1/5 of the nodes
-        addresses = list(self.routingTables.keys())
+        addresses = list(self.routingTables)
         random.shuffle(addresses)
-        addresses = addresses[:int(len(addresses)/3)]
 
-        for address in addresses:
+        for i in range(0, n):
+            address = addresses[i % len(addresses)]
+            neighbour = random.choice(list(self.channels[address]))
 
-            # Get the updates that are ready to be sent to the neighbours
-            updateQueue = self.updateQueues[address]
-            routingTable = self.routingTables[address]
+            # Share the entire routing table with the neighbour
+            for destination in self.routingTables[address]:
 
-            print("Sharing " + address + " updates.")
+                if destination == neighbour:
+                    continue
 
-            # Loop through updates and apply them to the neighbours
-            print("updateQueue size: " + str(len(updateQueue)) + " updates")
-            while len(updateQueue) > 0:
-                destination = updateQueue.pop(0)
-                nextHop = routingTable[destination]
+                # If the neighbour already knows about the destination
+                if destination in self.routingTables[neighbour]:
 
-                # Share the table with the neighbours and update their table accordingly
-                for neighbour in self.channels[address].keys():
+                    # If the hop is the neighbour we don't share
+                    if self.routingTables[address][destination].hop == neighbour:
+                        continue
 
-                    # Check if we are not sharing info with the neighbour about itself
-                    if destination != neighbour:
+                    new_max_money = min(self.routingTables[address][destination].max_money,
+                                        self.channels[neighbour][address])
 
-                        neighbourTable = self.routingTables[neighbour]
-                        neighbourUpdateQueue = self.updateQueues[neighbour]
+                    # If we are updating old info from this address
+                    if self.routingTables[neighbour][destination].hop == address:
+                        self.routingTables[neighbour][destination] = hop.Hop(address, new_max_money, self.routingTables[neighbour][destination])
 
-                        if destination not in neighbourTable:
-                            if nextHop[1] < self.channels[neighbour][address]:
-                                neighbourTable[destination] = (address, nextHop[1])
-                            else:
-                                neighbourTable[destination] = (address, self.channels[neighbour][address])
+                    elif self.routingTables[neighbour][destination].max_money < new_max_money:
+                        self.routingTables[neighbour][destination] = hop.Hop(address, new_max_money, self.routingTables[neighbour][destination])
 
-                            neighbourUpdateQueue.append(destination)
-                        else:
-                            # Get the neighbours next hop for a certain the update's destination
-                            neighbourNextHop = neighbourTable[destination]
+                else:
+                    max_money = min(self.channels[neighbour][address], self.routingTables[address][destination].max_money)
+                    self.routingTables[neighbour][destination] = hop.Hop(address, max_money)
 
-                            # If we are updating the information on the same routing
-                            if neighbourNextHop[0] == address:
-                                if nextHop[1] < self.channels[neighbour][address]:
-                                    neighbourTable[destination] = (address, nextHop[1])
-                                else:
-                                    neighbourTable[destination] = (address, self.channels[neighbour][address])
-                            else:
-                                # If the new path is wider than the channel and the previous info
-                                if nextHop[1] > neighbourNextHop[1]:
-                                    if nextHop[1] < self.channels[neighbour][address]:
-                                        neighbourTable[destination] = (nextHop[0], nextHop[1])
-                                    else:
-                                        neighbourTable[destination] = (nextHop[0], self.channels[neighbour][address])
+            for destination in self.routingTables[neighbour]:
 
-                            if destination not in neighbourUpdateQueue:
-                                neighbourUpdateQueue.append(destination)
+                if destination == address:
+                    continue
+
+                if destination in self.routingTables[address]:
+
+                    # If the hop is the neighbour we don't share
+                    if self.routingTables[neighbour][destination].hop == address:
+                        continue
+
+                    new_max_money = min(self.routingTables[neighbour][destination].max_money,
+                                        self.channels[address][neighbour])
+
+                    # If we are updating old info from this address
+                    if self.routingTables[address][destination].hop == neighbour:
+                        self.routingTables[address][destination] = hop.Hop(neighbour, new_max_money, self.routingTables[address][destination])
+
+                    elif self.routingTables[address][destination].max_money < new_max_money:
+                        self.routingTables[address][destination] = hop.Hop(neighbour, new_max_money, self.routingTables[address][destination])
+
+                else:
+                    max_money = min(self.channels[address][neighbour], self.routingTables[neighbour][destination].max_money)
+                    self.routingTables[address][destination] = hop.Hop(neighbour, max_money)
         return
 
     # Get a path from node A to node B by following the routing table information starting from A
@@ -172,7 +170,10 @@ class DistributedRouting:
         nextHopTable = self.routingTables[nextHop]
 
         while destination in nextHopTable.keys():
-            nextHop = nextHopTable[destination][0]
+            print("\nPATH:\nFrom: " + source + "\nTo: " +
+                  destination + "\nCurrent Hop: " + nextHop)
+            print("\nTABLE:\n" + str(nextHopTable) + "\n")
+            nextHop = nextHopTable[destination].hop
             path.append(nextHop)
             nextHopTable = self.routingTables[nextHop]
 
@@ -185,8 +186,6 @@ class DistributedRouting:
     # Simulate the payment and change the channel states accordingly. If the path was not found return 1.
     # If the path is not valid (not enough capacity) return 2. If the payment was successful then return 0.
     def simulatePayment(self, source, destination, amount):
-
-        self.exchangeRoutingUpdates()
 
         sourceAddress = self.addresses.getLNAddress(source)
         destinationAddress = self.addresses.getLNAddress(destination)
@@ -217,5 +216,7 @@ class DistributedRouting:
 
             self.channels[node1][node2] -= amount
             self.channels[node2][node1] += amount
+
+        self.exchangeRoutingUpdates(1)
 
         return len(path)
