@@ -6,7 +6,7 @@ import payment
 import random
 
 nPayments = 300
-nNodes = 150
+nNodes = 200
 
 # Open adjencency list file and build the undirected graph
 f = open("adjList.txt", 'rb')

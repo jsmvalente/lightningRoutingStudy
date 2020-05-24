@@ -80,7 +80,7 @@ class DistributedRouting:
 
             self.addRoutingTable(nodeAddress)
 
-        # Simulate that sometime has passed and nodes have exchanged n routing updates
+        # Simulate that nodes have exchanged n routing updates
         self.exchangeRoutingUpdates(5)
 
         print("Initial routing setup done.")
@@ -217,6 +217,6 @@ class DistributedRouting:
             self.channels[node1][node2] -= amount
             self.channels[node2][node1] += amount
 
-        self.exchangeRoutingUpdates(1)
+        self.exchangeRoutingUpdates(5)
 
         return len(path)
