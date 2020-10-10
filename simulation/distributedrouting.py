@@ -7,9 +7,11 @@ from collections import defaultdict
 
 class DistributedRouting:
 
-    def __init__(self, G):
+    def __init__(self, G, nRoutingGossip):
 
         self.G = G
+        # Number of routing messages to be sent in between payments
+        self.nRoutingGossip = nRoutingGossip
         # Routing Tables:
         #   → Node Address:
         #       → Destination:
@@ -65,9 +67,9 @@ class DistributedRouting:
                 # Save this address
                 self.addresses.addLNAddress(self.addresses.getNewRelatedLNAddress(neighbourAddress), nodeKey)
 
-            # Visualize graph
-            nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=16, label="Leftover LN")
-            plt.show()
+        # Visualize graph with addresses
+        nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=16, label="Leftover LN")
+        plt.show()
 
         # Add routing tables
         for node in nodes:
@@ -81,7 +83,7 @@ class DistributedRouting:
             self.addRoutingTable(nodeAddress)
 
         # Simulate that nodes have exchanged n routing updates
-        self.exchangeRoutingUpdates(5)
+        self.exchangeRoutingUpdates(len(nodes)**2)
 
         print("Initial routing setup done.")
 
@@ -95,69 +97,50 @@ class DistributedRouting:
 
         return
 
-    # Share updates between n pairs of nodes
+    # Share updates through every edge n times
     def exchangeRoutingUpdates(self, n):
 
         # print("Sharing " + str(n) + " routing updates")
 
-        addresses = list(self.routingTables)
+        addresses = list(self.channels)
         random.shuffle(addresses)
 
-        for i in range(0, n):
-            address = addresses[i % len(addresses)]
-            neighbour = random.choice(list(self.channels[address]))
+        # Go through every edge n times
+        for _ in range(0, n):
 
-            # Share the entire routing table with the neighbour
-            for destination in self.routingTables[address]:
+            # Go through every node
+            for address in addresses:
+                
+                # Go through every channel in each node
+                for neighbour in list(self.channels[address]):
+                
+                    # Share the entire routing table with the neighbour
+                    for destination in self.routingTables[address]:
 
-                if destination == neighbour:
-                    continue
+                        if destination == neighbour:
+                            continue
 
-                # If the neighbour already knows about the destination
-                if destination in self.routingTables[neighbour]:
+                        # If the neighbour already knows about the destination
+                        if destination in self.routingTables[neighbour]:
 
-                    # If the hop is the neighbour we don't share
-                    if self.routingTables[address][destination].hop == neighbour:
-                        continue
+                            # If the hop is the neighbour we don't share
+                            if self.routingTables[address][destination].hop == neighbour:
+                                continue
 
-                    new_max_money = min(self.routingTables[address][destination].max_money,
-                                        self.channels[neighbour][address])
+                            new_max_money = min(self.routingTables[address][destination].max_money,
+                                                self.channels[neighbour][address])
 
-                    # If we are updating old info from this address
-                    if self.routingTables[neighbour][destination].hop == address:
-                        self.routingTables[neighbour][destination] = hop.Hop(address, new_max_money, self.routingTables[neighbour][destination])
+                            # If we are updating old info from this address
+                            if self.routingTables[neighbour][destination].hop == address:
+                                self.routingTables[neighbour][destination] = hop.Hop(address, new_max_money)
 
-                    elif self.routingTables[neighbour][destination].max_money < new_max_money:
-                        self.routingTables[neighbour][destination] = hop.Hop(address, new_max_money, self.routingTables[neighbour][destination])
+                            elif self.routingTables[neighbour][destination].max_money < new_max_money:
+                                self.routingTables[neighbour][destination] = hop.Hop(address, new_max_money)
 
-                else:
-                    max_money = min(self.channels[neighbour][address], self.routingTables[address][destination].max_money)
-                    self.routingTables[neighbour][destination] = hop.Hop(address, max_money)
+                        else:
+                            max_money = min(self.channels[neighbour][address], self.routingTables[address][destination].max_money)
+                            self.routingTables[neighbour][destination] = hop.Hop(address, max_money)
 
-            for destination in self.routingTables[neighbour]:
-
-                if destination == address:
-                    continue
-
-                if destination in self.routingTables[address]:
-
-                    # If the hop is the neighbour we don't share
-                    if self.routingTables[neighbour][destination].hop == address:
-                        continue
-
-                    new_max_money = min(self.routingTables[neighbour][destination].max_money,
-                                        self.channels[address][neighbour])
-
-                    # If we are updating old info from this address
-                    if self.routingTables[address][destination].hop == neighbour:
-                        self.routingTables[address][destination] = hop.Hop(neighbour, new_max_money, self.routingTables[address][destination])
-
-                    elif self.routingTables[address][destination].max_money < new_max_money:
-                        self.routingTables[address][destination] = hop.Hop(neighbour, new_max_money, self.routingTables[address][destination])
-
-                else:
-                    max_money = min(self.channels[address][neighbour], self.routingTables[neighbour][destination].max_money)
-                    self.routingTables[address][destination] = hop.Hop(neighbour, max_money)
         return
 
     # Get a path from node A to node B by following the routing table information starting from A
@@ -168,8 +151,15 @@ class DistributedRouting:
         nextHop = source
         path = [nextHop]
         nextHopTable = self.routingTables[nextHop]
+        hopCounter = 0
 
         while destination in nextHopTable.keys():
+            
+            # Limit the paths to 20 hops
+            if hopCounter > 20:
+                print("Hops limit reached.\n")
+                break
+
             print("\nPATH:\nFrom: " + source + "\nTo: " +
                   destination + "\nCurrent Hop: " + nextHop)
             print("\nTABLE:\n" + str(nextHopTable) + "\n")
@@ -177,9 +167,15 @@ class DistributedRouting:
             path.append(nextHop)
             nextHopTable = self.routingTables[nextHop]
 
-            # If the next hope is the destination we reached the end of the path
+            # If the next hop is the destination we reached the end of the path
             if destination == nextHop:
+                print("Reached " + destination + "!" + "\nPath:")
+                print(path)
                 return path
+            
+            hopCounter+=1
+
+        print("\nCouldn't find path to: " + destination + "\n")
 
         return None
 
@@ -206,6 +202,7 @@ class DistributedRouting:
             # If one of the channels has not enough capacity the path is not valid
             if self.channels[node1][node2] < amount:
                 # If there isn't enough capacity on a path channel return -2
+                print("Invalid path. Not enough balance on: " + node1 + " -> " + node2)
                 return -2
 
 
@@ -217,6 +214,6 @@ class DistributedRouting:
             self.channels[node1][node2] -= amount
             self.channels[node2][node1] += amount
 
-        self.exchangeRoutingUpdates(5)
+        self.exchangeRoutingUpdates(self.nRoutingGossip)
 
         return len(path)

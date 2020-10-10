@@ -3,3 +3,4 @@ __pycache__
 .ipynb_checkpoints
 simulation/.idea
 simulation/venv
+.vscode/

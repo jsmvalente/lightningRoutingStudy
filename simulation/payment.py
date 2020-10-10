@@ -15,13 +15,11 @@ class Payment:
 
 
 #Create n payments to be used in the simulation
-def createPayments(n, nodes):
+# Use gaussian probability distribution for random payment amounts
+# mean and standard deviation
+def createPayments(n, nodes, mu, sigma):
 
     payments = []
-
-    # Use gaussian probability distribution for random payment amounts
-    # mean and standard deviation
-    mu, sigma = 25000, 6000
     paymentAmounts = np.random.normal(mu, sigma, n).tolist()
 
     # Find source and destination nodes
