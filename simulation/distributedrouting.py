@@ -85,7 +85,7 @@ class DistributedRouting:
         # Simulate that nodes have exchanged n routing updates
         self.exchangeRoutingUpdates(len(nodes)**2)
 
-        print("Initial routing setup done.")
+        print("Distributed Routing: Initial routing setup done.")
 
         return
 
@@ -102,6 +102,7 @@ class DistributedRouting:
 
         # print("Sharing " + str(n) + " routing updates")
 
+        # Get a list of all addresses in a random order
         addresses = list(self.channels)
         random.shuffle(addresses)
 
@@ -146,7 +147,7 @@ class DistributedRouting:
     # Get a path from node A to node B by following the routing table information starting from A
     def getRoutingPath(self, source, destination):
 
-        print("Getting routing path from " + source + " to " + destination)
+        print("Distributed Routing: Getting routing path from " + source + " to " + destination)
 
         nextHop = source
         path = [nextHop]
@@ -157,7 +158,7 @@ class DistributedRouting:
             
             # Limit the paths to 20 hops
             if hopCounter > 20:
-                print("Hops limit reached.\n")
+                print("Distributed Routing: Hops limit reached.\n")
                 break
 
             print("\nPATH:\nFrom: " + source + "\nTo: " +
@@ -169,13 +170,13 @@ class DistributedRouting:
 
             # If the next hop is the destination we reached the end of the path
             if destination == nextHop:
-                print("Reached " + destination + "!" + "\nPath:")
+                print("Distributed Routing: Reached " + destination + "!" + "\nPath:")
                 print(path)
                 return path
             
             hopCounter+=1
 
-        print("\nCouldn't find path to: " + destination + "\n")
+        print("\nDistributed Routing: Couldn't find path to: " + destination + "\n")
 
         return None
 
@@ -202,7 +203,7 @@ class DistributedRouting:
             # If one of the channels has not enough capacity the path is not valid
             if self.channels[node1][node2] < amount:
                 # If there isn't enough capacity on a path channel return -2
-                print("Invalid path. Not enough balance on: " + node1 + " -> " + node2)
+                print("Distributed Routing: Invalid path. Not enough balance on: " + node1 + " -> " + node2)
                 return -2
 
 

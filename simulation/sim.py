@@ -7,12 +7,12 @@ import random
 
 nPayments = 100
 # Payments gaussian mean weight to be multiplied by average channel balance
-payments_mu_weight = 0.01
+payments_mu_weight = 0.4
 # Payemnts gaussian standard deviation
-payments_sigma_weight = 0.001
+payments_sigma_weight = 0.1
 nNodes = 280
 #Number of routing gossip messages to be sent in-between payments
-nRoutingGossip = 5
+nRoutingGossip = 10
 
 # Open adjencency list file and build the undirected graph
 f = open("adjList.txt", 'rb')
@@ -51,7 +51,7 @@ while G.number_of_nodes() > nNodes:
 # Clean graph from smallest components
 print("Node removal broke graph into " + str(nx.number_connected_components(G)) + " connected components.")
 largest_cc = max(nx.connected_components(G), key=len)
-G = G.subgraph(largest_cc).copy()
+G = G.subgraph(largest_cc)
 print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
 
 # Visualize graph
@@ -119,6 +119,10 @@ for payment in payments:
     else:
         distPathCumlLen += distPathResult
         distRoutingCount += 1
+
+    # Check when the distributed solution fails for overcap and the shortest path finds a path:
+    if shortPathResult > 0 and distPathResult == -2:
+        print("Distributed ROuting overcap and shortest path success")
 
 print("\nAverage Channel Balance: " + str(averageBalance) + "\n" +
         "Number Of Payments: " + str(nPayments) + "\n" + 

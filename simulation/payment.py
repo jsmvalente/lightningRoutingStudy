@@ -11,6 +11,9 @@ class Payment:
         self.destination = destination
 
         return
+    
+    def __repr__(self):
+        return "Amount:" + str(self.amount) + ",  Source: " + self.source + ", Destination: " + self.destination
 
 
 
