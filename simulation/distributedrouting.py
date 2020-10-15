@@ -68,7 +68,7 @@ class DistributedRouting:
                 self.addresses.addLNAddress(self.addresses.getNewRelatedLNAddress(neighbourAddress), nodeKey)
 
         # Visualize graph with addresses
-        nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=16, label="Leftover LN")
+        nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=18, label="Leftover LN")
         plt.show()
 
         # Add routing tables

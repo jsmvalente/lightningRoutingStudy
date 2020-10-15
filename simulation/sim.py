@@ -2,14 +2,15 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import distributedrouting
 import shortestpathrouting
+import statistics
 import payment
 import random
 
-nPayments = 100
+nPayments = 200
 # Payments gaussian mean weight to be multiplied by average channel balance
-payments_mu_weight = 0.4
+payments_mu_weight = 0.1
 # Payemnts gaussian standard deviation
-payments_sigma_weight = 0.1
+payments_sigma_weight = 0.01
 nNodes = 280
 #Number of routing gossip messages to be sent in-between payments
 nRoutingGossip = 10
@@ -55,35 +56,36 @@ G = G.subgraph(largest_cc)
 print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
 
 # Visualize graph
-nx.draw(G, with_labels=True, font_size=6, label="Leftover LN")
+nx.draw(G, with_labels=True, font_size=10, label="Leftover LN")
 plt.show()
 
 # Create channel state balances
-balanceSum = 0
+balances = []
 for e in G.edges:
     capacity = G[e[0]][e[1]]["capacity"]
     balance = capacity/2
-    balanceSum += capacity
+    balances.append(balance)
     # Create two dic entries with the ids of the nodes and their balances in the channel
     G[e[0]][e[1]][e[0]] = balance
     G[e[0]][e[1]][e[1]] = balance
 
 # Get the payment distribution mu and sigma from the average node capacity
-averageBalance = balanceSum/(len(G.edges)*2)
-payments_mu = averageBalance*payments_mu_weight
-payments_sigma = averageBalance*payments_sigma_weight
+medianBalance = statistics.median(balances)
+payments_mu = medianBalance*payments_mu_weight
+payments_sigma = medianBalance*payments_sigma_weight
 
 # Simulate with n payments between two nodes
 nodes = list(G.nodes)
 payments = payment.createPayments(nPayments, nodes, payments_mu, payments_sigma)
 print("Trying " + str(nPayments) + " payments")
 
-# Get a copy of G to be used in the second routing scheme
-Gcopy = G.copy()
+# Get a copy of G to be used in the each routing scheme
+Gcopy_shortPath = G.copy()
+Gcopy_dist = G.copy()
 
 # Init routing schemes
-shortPathRouting = shortestpathrouting.ShortestPathRouting(G)
-distRouting = distributedrouting.DistributedRouting(Gcopy, nRoutingGossip)
+shortPathRouting = shortestpathrouting.ShortestPathRouting(Gcopy_shortPath)
+distRouting = distributedrouting.DistributedRouting(Gcopy_dist, nRoutingGossip)
 
 # Simulate payments
 shortPathResult = 0
@@ -122,9 +124,17 @@ for payment in payments:
 
     # Check when the distributed solution fails for overcap and the shortest path finds a path:
     if shortPathResult > 0 and distPathResult == -2:
-        print("Distributed ROuting overcap and shortest path success")
+        print("Distributed Routing overcap and shortest path success")
 
-print("\nAverage Channel Balance: " + str(averageBalance) + "\n" +
+
+# Draw the channel balance distribution
+plt.hist(balances, bins = 10)
+plt.ylabel("Frequency")
+plt.xlabel("Balance (Satoshis)")
+plt.show()
+
+# Print the stats
+print("\nMedian Channel Balance: " + str(medianBalance) + "\n" +
         "Number Of Payments: " + str(nPayments) + "\n" + 
         "Payments µ: " + str(payments_mu) + "\n" +
         "Payments σ: " + str(payments_sigma) + "\n")
