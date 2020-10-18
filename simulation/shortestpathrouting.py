@@ -24,7 +24,7 @@ class ShortestPathRouting:
             # If one of the channels has not enough capacity the path is not valid
             if self.G[node1][node2][node1] < amount:
                 # If there isn't enough capacity on a path channel return -2
-                print("Shortest Path Routing: Invalid path. Not enough balance on: " + node1 + " -> " + node2)
+                # print("Shortest Path Routing: Invalid path. Not enough balance on: " + node1 + " -> " + node2)
                 return -2
 
         # Change the state of the channels in the path

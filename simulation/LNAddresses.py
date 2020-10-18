@@ -37,7 +37,7 @@ class LNAddresses:
         self.addressTree.addAddress(address)
         self.lnAddressesDic[node] = address
         self.addressesDic[address] = node
-        print("Address '" + address + "' added to the database.")
+        # print("Address '" + address + "' added to the database.")
 
         return
 

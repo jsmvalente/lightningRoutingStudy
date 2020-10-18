@@ -3,16 +3,20 @@ import matplotlib.pyplot as plt
 import distributedrouting
 import shortestpathrouting
 import statistics
-import payment
+import payment as pmt
 import random
 
+# Number of simulation runs
+nSimulation = 100
+# Number of payments in each simulation run
 nPayments = 200
 # Payments gaussian mean weight to be multiplied by average channel balance
-payments_mu_weight = 0.1
+payments_mu_weight = 1
 # Payemnts gaussian standard deviation
-payments_sigma_weight = 0.01
+payments_sigma_weight = 0.5
+# Number of nodes to have before stopping remove nodes
 nNodes = 280
-#Number of routing gossip messages to be sent in-between payments
+# Number of routing gossip messages to be sent in-between payments
 nRoutingGossip = 10
 
 # Open adjencency list file and build the undirected graph
@@ -22,7 +26,7 @@ f.close()
 
 # Clean graph from smallest components
 largest_cc = max(nx.connected_components(G), key=len)
-G = G.subgraph(largest_cc).copy()
+cleanG = G.subgraph(largest_cc).copy()
 
 print("Number of nodes: " + str(G.number_of_nodes()))
 print("Number of edges: " + str(G.number_of_edges()))
@@ -40,116 +44,169 @@ for line in lines:
 
 f.close()
 plt.show()
-# Remove a fraction of the nodes so the network is easier to analyze
-# Since we are working with a scale-free network robustness to random node removals is expected
 
-# Remove nodes until there are only nNodes
-while G.number_of_nodes() > nNodes:
-    # Choose node to remove
-    randomNode = random.choice(list(G.nodes))
-    G.remove_node(randomNode)
+# Variables to accumulate the studid values
+shortestPathSuccessAcumm = 0
+shortestPathAPLAcumm = 0
+shortestPathOvercapAcumm = 0
+shortestPathNonExisAcumm = 0
+distRoutingSuccessAcumm = 0
+distRoutingAPLAcumm = 0
+distRoutingOvercapAcumm = 0
+distRoutingNonExisAcumm = 0
 
-# Clean graph from smallest components
-print("Node removal broke graph into " + str(nx.number_connected_components(G)) + " connected components.")
-largest_cc = max(nx.connected_components(G), key=len)
-G = G.subgraph(largest_cc)
-print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
+for i in range(nSimulation):
 
-# Visualize graph
-nx.draw(G, with_labels=True, font_size=10, label="Leftover LN")
-plt.show()
+    # Remove a fraction of the nodes so the network is easier to analyze
+    # Since we are working with a scale-free network robustness to random node removals is expected
+    G = cleanG.copy()
+    
+    # Remove nodes until there are only nNodes
+    while G.number_of_nodes() > nNodes:
+        # Choose node to remove
+        randomNode = random.choice(list(G.nodes))
+        G.remove_node(randomNode)
 
-# Create channel state balances
-balances = []
-for e in G.edges:
-    capacity = G[e[0]][e[1]]["capacity"]
-    balance = capacity/2
-    balances.append(balance)
-    # Create two dic entries with the ids of the nodes and their balances in the channel
-    G[e[0]][e[1]][e[0]] = balance
-    G[e[0]][e[1]][e[1]] = balance
+    # Clean graph from smallest components
+    print("Node removal broke graph into " + str(nx.number_connected_components(G)) + " connected components.")
+    largest_cc = max(nx.connected_components(G), key=len)
+    G = G.subgraph(largest_cc)
+    print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
 
-# Get the payment distribution mu and sigma from the average node capacity
-medianBalance = statistics.median(balances)
-payments_mu = medianBalance*payments_mu_weight
-payments_sigma = medianBalance*payments_sigma_weight
+    # Visualize graph
+    # nx.draw(G, with_labels=True, font_size=8, label="Leftover LN")
+    # plt.show()
 
-# Simulate with n payments between two nodes
-nodes = list(G.nodes)
-payments = payment.createPayments(nPayments, nodes, payments_mu, payments_sigma)
-print("Trying " + str(nPayments) + " payments")
+    # Create channel state balances
+    balances = []
+    for e in G.edges:
+        capacity = G[e[0]][e[1]]["capacity"]
+        balance = capacity/2
+        balances.append(balance)
+        # Create two dic entries with the ids of the nodes and their balances in the channel
+        G[e[0]][e[1]][e[0]] = balance
+        G[e[0]][e[1]][e[1]] = balance
 
-# Get a copy of G to be used in the each routing scheme
-Gcopy_shortPath = G.copy()
-Gcopy_dist = G.copy()
+    # Get the payment distribution mu and sigma from the average node capacity
+    medianBalance = statistics.median(balances)
+    payments_mu = medianBalance*payments_mu_weight
+    payments_sigma = medianBalance*payments_sigma_weight
 
-# Init routing schemes
-shortPathRouting = shortestpathrouting.ShortestPathRouting(Gcopy_shortPath)
-distRouting = distributedrouting.DistributedRouting(Gcopy_dist, nRoutingGossip)
+    # Simulate with n payments between two nodes
+    nodes = list(G.nodes)
+    payments = pmt.createPayments(nPayments, nodes, payments_mu, payments_sigma)
+    print("Trying " + str(nPayments) + " payments")
 
-# Simulate payments
-shortPathResult = 0
-distPathResult = 0 
-shortPathRoutingCount = 0
-shortPathOverCap = 0
-shortPathNonExis = 0
-shortPathCumlLen = 0
-distRoutingCount = 0
-distRoutingOverCap = 0
-distRoutingNonExis = 0
-distPathCumlLen = 0
+    # Get a copy of G to be used in the each routing scheme
+    Gcopy_shortPath = G.copy()
+    Gcopy_dist = G.copy()
 
-for payment in payments:
-    # Simulate the payment using shortest path routing
-    shortPathResult = shortPathRouting.simulatePayment(payment.source, payment.destination, payment.amount)
+    # Init routing schemes
+    shortPathRouting = shortestpathrouting.ShortestPathRouting(Gcopy_shortPath)
+    distRouting = distributedrouting.DistributedRouting(Gcopy_dist, nRoutingGossip)
 
-    if shortPathResult == -1:
-        shortPathNonExis += 1
-    elif shortPathResult == -2:
-        shortPathOverCap += 1
-    else:
-        shortPathCumlLen += shortPathResult
-        shortPathRoutingCount += 1
+    # Simulate payments
+    shortPathResult = 0
+    distPathResult = 0 
+    shortPathRoutingCount = 0
+    shortPathOverCap = 0
+    shortPathNonExis = 0
+    shortPathCumlLen = 0
+    distRoutingCount = 0
+    distRoutingOverCap = 0
+    distRoutingNonExis = 0
+    distPathCumlLen = 0
+    shortestPathSuccess = 0
+    shortestPathAPL = 0
+    shortestPathOvercap = 0
+    shortestPathNonExis = 0
+    distRoutingSuccess = 0
+    distRoutingAPL = 0
+    distRoutingOvercap = 0
+    distRoutingNonExis = 0
 
-    # Simulate the payment using distributed routing
-    distPathResult = distRouting.simulatePayment(payment.source, payment.destination, payment.amount)
+    for payment in payments:
+        # Simulate the payment using shortest path routing
+        shortPathResult = shortPathRouting.simulatePayment(payment.source, payment.destination, payment.amount)
 
-    if distPathResult == -1:
-        distRoutingNonExis += 1
-    elif distPathResult == -2:
-        distRoutingOverCap += 1
-    else:
-        distPathCumlLen += distPathResult
-        distRoutingCount += 1
+        if shortPathResult == -1:
+            shortPathNonExis += 1
+        elif shortPathResult == -2:
+            shortPathOverCap += 1
+        else:
+            shortPathCumlLen += shortPathResult
+            shortPathRoutingCount += 1
 
-    # Check when the distributed solution fails for overcap and the shortest path finds a path:
-    if shortPathResult > 0 and distPathResult == -2:
-        print("Distributed Routing overcap and shortest path success")
+        # Simulate the payment using distributed routing
+        distPathResult = distRouting.simulatePayment(payment.source, payment.destination, payment.amount)
+
+        if distPathResult == -1:
+            distRoutingNonExis += 1
+        elif distPathResult == -2:
+            distRoutingOverCap += 1
+        else:
+            distPathCumlLen += distPathResult
+            distRoutingCount += 1
+
+        # Check when the distributed solution fails for overcap and the shortest path finds a path:
+        if shortPathResult > 0 and distPathResult == -2:
+            print("Distributed Routing overcap and shortest path success")
 
 
-# Draw the channel balance distribution
-plt.hist(balances, bins = 10)
-plt.ylabel("Frequency")
-plt.xlabel("Balance (Satoshis)")
-plt.show()
+    # Draw the channel balance distribution
+    # plt.hist(balances, bins = 10)
+    # plt.ylabel("Frequency")
+    # plt.xlabel("Balance (Satoshis)")
+    # plt.show()
 
-# Print the stats
-print("\nMedian Channel Balance: " + str(medianBalance) + "\n" +
-        "Number Of Payments: " + str(nPayments) + "\n" + 
-        "Payments µ: " + str(payments_mu) + "\n" +
-        "Payments σ: " + str(payments_sigma) + "\n")
+    # Print this runs stats
+    print("\nMedian Channel Balance: " + str(medianBalance) + "\n" +
+            "Number Of Payments: " + str(nPayments) + "\n" + 
+            "Payments µ: " + str(payments_mu) + "\n" +
+            "Payments σ: " + str(payments_sigma) + "\n")
+    
+    shortestPathSuccess = round((shortPathRoutingCount/nPayments)*100, 2)
+    shortestPathSuccessAcumm += shortestPathSuccess
+    shortestPathAPL = round(shortPathCumlLen / shortPathRoutingCount, 2)
+    shortestPathAPLAcumm += shortestPathAPL
+    print("Shortest Path Routing:\n" +
+        "P(Success) = " + str(shortestPathSuccess) + "%\n" +
+        "Average path length = " + str(shortestPathAPL))
+    if nPayments != shortPathRoutingCount:
+        shortestPathOvercap = round((shortPathOverCap / (nPayments-shortPathRoutingCount)) * 100, 2)
+        shortestPathNonExis = round((shortPathNonExis / (nPayments-shortPathRoutingCount)) * 100, 2)
+        shortestPathOvercapAcumm += shortestPathOvercap
+        shortestPathNonExisAcumm += shortestPathNonExis
+        print("P(Overcap|Failed) = " + str(shortestPathOvercap) + "%\n" +
+        "P(NonExis|Failed) = " + str(shortestPathNonExis) + "%")
 
-print("Shortest Path Routing:\n" +
-      "P(Success) = " + str(round((shortPathRoutingCount/nPayments)*100, 2)) + "%\n" +
-      "Average path length = " + str(round(shortPathCumlLen / shortPathRoutingCount, 2)))
-if nPayments != shortPathRoutingCount:
-    print("P(Overcap|Failed) = " + str(round((shortPathOverCap / (nPayments-shortPathRoutingCount)) * 100, 2)) + "%\n" +
-      "P(NonExis|Failed) = " + str(round((shortPathNonExis / (nPayments-shortPathRoutingCount)) * 100, 2)) + "%")
+    distRoutingSuccess = round((distRoutingCount / nPayments) * 100, 2)
+    distRoutingSuccessAcumm += distRoutingSuccess
+    print("\nDistributed Routing:\n" +
+        "P(Success) = " + str(distRoutingSuccess) + "%")
+    if distRoutingCount:
+        distRoutingAPL = round(distPathCumlLen / distRoutingCount, 2)
+        distRoutingAPLAcumm += distRoutingAPL
+        print("Average path length = " + str(distRoutingAPL))
+    if nPayments != distRoutingCount:
+        distRoutingOvercap = round((distRoutingOverCap / (nPayments - distRoutingCount)) * 100, 2)
+        distRoutingNonExis = round((distRoutingNonExis / (nPayments - distRoutingCount)) * 100, 2)
+        distRoutingOvercapAcumm += distRoutingOvercap
+        distRoutingNonExisAcumm += distRoutingNonExis
+        print("P(Overcap|Failed) = " + str(distRoutingOvercap) + "%\n" +
+        "P(NonExis|Failed) = " + str(distRoutingNonExis) + "%")
 
-print("\nDistributed Routing:\n" +
-      "P(Success) = " + str(round((distRoutingCount / nPayments) * 100, 2)) + "%")
-if distRoutingCount:
-    print("Average path length = " + str(round(distPathCumlLen / distRoutingCount, 2)))
-if nPayments != distRoutingCount:
-      print("P(Overcap|Failed) = " + str(round((distRoutingOverCap / (nPayments - distRoutingCount)) * 100, 2)) + "%\n" +
-      "P(NonExis|Failed) = " + str(round((distRoutingNonExis / (nPayments - distRoutingCount)) * 100, 2)) + "%")
+
+# Print the final stats
+print("\n\nResults from " + str(nSimulation) + " simulation runs.\n")
+print("Average Shortest Path Routing:\n" +
+        "P(Success) = " + str(round(shortestPathSuccessAcumm/nSimulation, 2)) + "%\n" +
+        "Average path length = " + str(round(shortestPathAPLAcumm/nSimulation, 2)) + "\n" +
+        "P(Overcap|Failed) = " + str(round(shortestPathOvercapAcumm/nSimulation, 2)) + "%\n" +
+        "P(NonExis|Failed) = " + str(round(shortestPathNonExisAcumm/nSimulation, 2)) + "%")
+
+print("\nAverage Distributed Routing:\n" +
+        "P(Success) = " + str(round(distRoutingSuccessAcumm/nSimulation, 2)) + "%\n" +
+        "Average path length = " + str(round(distRoutingAPLAcumm/nSimulation, 2)) + "\n" +
+        "P(Overcap|Failed) = " + str(round(distRoutingOvercapAcumm/nSimulation, 2)) + "%\n" +
+        "P(NonExis|Failed) = " + str(round(distRoutingNonExisAcumm/nSimulation, 2)) + "%")

@@ -68,8 +68,8 @@ class DistributedRouting:
                 self.addresses.addLNAddress(self.addresses.getNewRelatedLNAddress(neighbourAddress), nodeKey)
 
         # Visualize graph with addresses
-        nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=18, label="Leftover LN")
-        plt.show()
+        # nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=16, label="Leftover LN")
+        # plt.show()
 
         # Add routing tables
         for node in nodes:
@@ -147,7 +147,7 @@ class DistributedRouting:
     # Get a path from node A to node B by following the routing table information starting from A
     def getRoutingPath(self, source, destination):
 
-        print("Distributed Routing: Getting routing path from " + source + " to " + destination)
+        # print("Distributed Routing: Getting routing path from " + source + " to " + destination)
 
         nextHop = source
         path = [nextHop]
@@ -158,25 +158,24 @@ class DistributedRouting:
             
             # Limit the paths to 20 hops
             if hopCounter > 20:
-                print("Distributed Routing: Hops limit reached.\n")
+                # print("Distributed Routing: Hops limit reached.\n")
                 break
 
-            print("\nPATH:\nFrom: " + source + "\nTo: " +
-                  destination + "\nCurrent Hop: " + nextHop)
-            print("\nTABLE:\n" + str(nextHopTable) + "\n")
+            # print("\nPATH:\nFrom: " + source + "\nTo: " + destination + "\nCurrent Hop: " + nextHop)
+            # print("\nTABLE:\n" + str(nextHopTable) + "\n")
             nextHop = nextHopTable[destination].hop
             path.append(nextHop)
             nextHopTable = self.routingTables[nextHop]
 
             # If the next hop is the destination we reached the end of the path
             if destination == nextHop:
-                print("Distributed Routing: Reached " + destination + "!" + "\nPath:")
-                print(path)
+                # print("Distributed Routing: Reached " + destination + "!" + "\nPath:")
+                # print(path)
                 return path
             
             hopCounter+=1
 
-        print("\nDistributed Routing: Couldn't find path to: " + destination + "\n")
+        # print("\nDistributed Routing: Couldn't find path to: " + destination + "\n")
 
         return None
 
@@ -203,7 +202,7 @@ class DistributedRouting:
             # If one of the channels has not enough capacity the path is not valid
             if self.channels[node1][node2] < amount:
                 # If there isn't enough capacity on a path channel return -2
-                print("Distributed Routing: Invalid path. Not enough balance on: " + node1 + " -> " + node2)
+                # print("Distributed Routing: Invalid path. Not enough balance on: " + node1 + " -> " + node2)
                 return -2
 
 
