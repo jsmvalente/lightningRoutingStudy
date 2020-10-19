@@ -1,0 +1,16 @@
+Median Channel Balance: 98781.5
+Number Of Payments: 200
+Payments µ: 98781.5
+Payments σ: 49390.75
+
+Shortest Path Routing:
+P(Success) = 34.5%
+Average path length = 3.96
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Distributed Routing:
+P(Success) = 40.5%
+Average path length = 4.59
+P(Overcap|Failed) = 94.12%
+P(NonExis|Failed) = 5.88%

@@ -1,0 +1,13 @@
+Results from 100 simulation runs.
+
+Average Shortest Path Routing:
+P(Success) = 23.69%
+Average path length = 3.61
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 26.21%
+Average path length = 4.0
+P(Overcap|Failed) = 94.57%
+P(NonExis|Failed) = 5.43%

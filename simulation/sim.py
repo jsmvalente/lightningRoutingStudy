@@ -11,9 +11,9 @@ nSimulation = 100
 # Number of payments in each simulation run
 nPayments = 200
 # Payments gaussian mean weight to be multiplied by average channel balance
-payments_mu_weight = 0.2
+payments_mu_weight = 0.4
 # Payemnts gaussian standard deviation
-payments_sigma_weight = 0.1
+payments_sigma_weight = 0.2
 # Number of nodes to have before stopping remove nodes
 nNodes = 280
 # Number of routing gossip messages to be sent in-between payments
