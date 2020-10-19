@@ -11,9 +11,9 @@ nSimulation = 100
 # Number of payments in each simulation run
 nPayments = 200
 # Payments gaussian mean weight to be multiplied by average channel balance
-payments_mu_weight = 1
+payments_mu_weight = 0.2
 # Payemnts gaussian standard deviation
-payments_sigma_weight = 0.5
+payments_sigma_weight = 0.1
 # Number of nodes to have before stopping remove nodes
 nNodes = 280
 # Number of routing gossip messages to be sent in-between payments
@@ -210,3 +210,5 @@ print("\nAverage Distributed Routing:\n" +
         "Average path length = " + str(round(distRoutingAPLAcumm/nSimulation, 2)) + "\n" +
         "P(Overcap|Failed) = " + str(round(distRoutingOvercapAcumm/nSimulation, 2)) + "%\n" +
         "P(NonExis|Failed) = " + str(round(distRoutingNonExisAcumm/nSimulation, 2)) + "%")
+
+print("\nAverage Delta = " + str(round( (distRoutingSuccessAcumm-shortestPathSuccessAcumm) / nSimulation, 2)))
