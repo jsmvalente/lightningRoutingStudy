@@ -173,6 +173,4 @@ P(NonExis|Failed) = 13.02%
 
 Average Delta = 3.7
 
-650:
-
 
