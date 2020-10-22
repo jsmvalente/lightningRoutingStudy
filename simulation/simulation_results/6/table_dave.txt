@@ -1,0 +1,16 @@
+Printing routing table
+Entry #: 0
+Destination: 0.0.0.2
+Next Hop: 0.0.0.0
+Capacity: 700000
+Update Height: 1220
+Entry #: 1
+Destination: 0.0.0.1
+Next Hop: 0.0.0.0
+Capacity: 700000
+Update Height: 1220
+Entry #: 2
+Destination: 0.0.0.0
+Next Hop: 0.0.0.0
+Capacity: 700000
+Update Height: 1220

@@ -1,0 +1,19 @@
+Alice:
+
+Got Route!
+Route to [0 0 0 3]
+Maximum Capacity: 390950
+Hop 0: [0 0 0 2]
+Hop 1: [0 0 0 3]
+
+Charlie:
+
+Forwarding route:
+Route to [0 0 0 3]
+Maximum Capacity: 390950
+Hop 0: [0 0 0 2]
+Hop 1: [0 0 0 3]
+
+Dave:
+
+Destination is local node. Sending route to sender.

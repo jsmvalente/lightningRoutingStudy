@@ -1,9 +1,239 @@
-mean_weight average delta
-0.2	        0.27
-0.4         
-0.6
-0.8
-1           2.55
+0.2:
+
+Average Shortest Path Routing:
+P(Success) = 58.62%
+Average path length = 3.89
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 59.02%
+Average path length = 4.22
+P(Overcap|Failed) = 87.81%
+P(NonExis|Failed) = 12.19%
+
+Average Delta = 0.4
+
+0.4:
+
+Average Shortest Path Routing:
+P(Success) = 42.16%
+Average path length = 3.78
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 44.31%
+Average path length = 4.11
+P(Overcap|Failed) = 91.65%
+P(NonExis|Failed) = 8.35%
+
+Average Delta = 2.16
+
+0.6:
+
+Average Shortest Path Routing:
+P(Success) = 31.95%
+Average path length = 3.68
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 34.29%
+Average path length = 4.03
+P(Overcap|Failed) = 94.2%
+P(NonExis|Failed) = 5.8%
+
+Average Delta = 2.34
+
+0.8:
+
+Average Shortest Path Routing:
+P(Success) = 28.04%
+Average path length = 3.51
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 30.41%
+Average path length = 3.84
+P(Overcap|Failed) = 94.76%
+P(NonExis|Failed) = 5.24%
+
+Average Delta = 2.38
+
+1.0:
+
+Average Shortest Path Routing:
+P(Success) = 24.5%
+Average path length = 3.59
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 26.91%
+Average path length = 3.95
+P(Overcap|Failed) = 94.18%
+P(NonExis|Failed) = 5.82%
+
+Average Delta = 2.4
+
 1.2
+
+Average Shortest Path Routing:
+P(Success) = 20.74%
+Average path length = 3.6
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 23.05%
+Average path length = 3.95
+P(Overcap|Failed) = 94.84%
+P(NonExis|Failed) = 5.16%
+
+Average Delta = 2.31
+
 1.4
+
+Average Shortest Path Routing:
+P(Success) = 18.08%
+Average path length = 3.49
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 20.32%
+Average path length = 3.82
+P(Overcap|Failed) = 95.4%
+P(NonExis|Failed) = 4.6%
+
+Average Delta = 2.25
+
 1.6
+
+Average Shortest Path Routing:
+P(Success) = 16.99%
+Average path length = 3.47
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 18.64%
+Average path length = 3.77
+P(Overcap|Failed) = 95.59%
+P(NonExis|Failed) = 4.41%
+
+Average Delta = 1.65
+
+1.8
+
+Average Shortest Path Routing:
+P(Success) = 15.54%
+Average path length = 3.44
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 17.39%
+Average path length = 3.74
+P(Overcap|Failed) = 95.64%
+P(NonExis|Failed) = 4.36%
+
+Average Delta = 1.84
+
+2
+
+Average Shortest Path Routing:
+P(Success) = 14.12%
+Average path length = 3.39
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 15.31%
+Average path length = 3.65
+P(Overcap|Failed) = 95.71%
+P(NonExis|Failed) = 4.29%
+
+Average Delta = 1.2
+
+2.2
+
+Average Shortest Path Routing:
+P(Success) = 13.64%
+Average path length = 3.55
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 15.01%
+Average path length = 3.81
+P(Overcap|Failed) = 95.27%
+P(NonExis|Failed) = 4.73%
+
+Average Delta = 1.36
+
+2.4
+
+Average Shortest Path Routing:
+P(Success) = 11.98%
+Average path length = 3.42
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 13.47%
+Average path length = 3.72
+P(Overcap|Failed) = 97.7%
+P(NonExis|Failed) = 2.3%
+
+Average Delta = 1.49
+
+2.6
+
+Average Shortest Path Routing:
+P(Success) = 11.75%
+Average path length = 3.46
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 13.23%
+Average path length = 3.77
+P(Overcap|Failed) = 97.31%
+P(NonExis|Failed) = 2.69%
+
+Average Delta = 1.49
+
+2.8
+
+Average Shortest Path Routing:
+P(Success) = 11.14%
+Average path length = 3.42
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 12.13%
+Average path length = 3.67
+P(Overcap|Failed) = 97.01%
+P(NonExis|Failed) = 2.99%
+
+Average Delta = 0.99
+
+3
+
+Average Shortest Path Routing:
+P(Success) = 10.15%
+Average path length = 3.45
+P(Overcap|Failed) = 100.0%
+P(NonExis|Failed) = 0.0%
+
+Average Distributed Routing:
+P(Success) = 11.33%
+Average path length = 3.72
+P(Overcap|Failed) = 97.09%
+P(NonExis|Failed) = 2.91%
+
+Average Delta = 1.18

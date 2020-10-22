@@ -7,15 +7,15 @@ import payment as pmt
 import random
 
 # Number of simulation runs
-nSimulation = 100
+nSimulation = 10
 # Number of payments in each simulation run
 nPayments = 200
 # Payments gaussian mean weight to be multiplied by average channel balance
-payments_mu_weight = 0.4
+payments_mu_weight = 1
 # Payemnts gaussian standard deviation
-payments_sigma_weight = 0.2
-# Number of nodes to have before stopping remove nodes
-nNodes = 280
+payments_sigma_weight = payments_mu_weight/2
+# Number of nodes to have before stopping removing nodes
+nNodes = 650
 # Number of routing gossip messages to be sent in-between payments
 nRoutingGossip = 10
 
@@ -95,7 +95,7 @@ for i in range(nSimulation):
     # Simulate with n payments between two nodes
     nodes = list(G.nodes)
     payments = pmt.createPayments(nPayments, nodes, payments_mu, payments_sigma)
-    print("Trying " + str(nPayments) + " payments")
+    print("Simulating " + str(nPayments) + " payments")
 
     # Get a copy of G to be used in the each routing scheme
     Gcopy_shortPath = G.copy()
