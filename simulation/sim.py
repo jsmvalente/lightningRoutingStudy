@@ -15,7 +15,7 @@ payments_mu_weight = 1
 # Payemnts gaussian standard deviation
 payments_sigma_weight = payments_mu_weight/2
 # Number of nodes to have before stopping removing nodes
-nNodes = 650
+nNodes = 600
 # Number of routing gossip messages to be sent in-between payments
 nRoutingGossip = 10
 

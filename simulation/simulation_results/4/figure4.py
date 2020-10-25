@@ -14,12 +14,12 @@ ldr_success = [average_delta[i]+spr_success[i] for i in range(len(average_delta)
 fig, ax1 = plt.subplots()
 
 ax1.set_xlabel('Mean Weight')
-ax1.set_ylabel('Average Delta (%)', color='tab:red')
+ax1.set_ylabel(r'$\overline{\Delta}$' + ' (%)', color='tab:red')
 ax1.plot(mean_weight, average_delta, color='tab:red')
 ax1.tick_params(axis='y', labelcolor='tab:red')
 ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
 
-ax2.set_ylabel('Average P(Success) (%)', color='tab:blue')  # we already handled the x-label with ax1
+ax2.set_ylabel(r'$\overline{P(Success)}$' + ' (%)', color='tab:blue')  # we already handled the x-label with ax1
 ax2.plot(mean_weight, spr_success, color='tab:blue', label="SPR")
 ax2.plot(mean_weight, ldr_success, linestyle='dashed', color='tab:blue', label="LDR")
 ax2.tick_params(axis='y', labelcolor='tab:blue')
