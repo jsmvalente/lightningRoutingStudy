@@ -31,7 +31,7 @@ ax2.legend(bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", borderaxespad=0, nco
 
 # Set the third axis (second subplot) with the the APL for LDR and SPR
 ax3.set_xlabel('Number of nodes')
-ax3.set_ylabel('APL')
+ax3.set_ylabel(r'$\overline{APL}$')
 ax3.plot(nNodes, spr_apl, color='tab:blue', label="SPR")
 ax3.plot(nNodes, ldr_apl, linestyle='dashed', color='tab:blue', label="LDR")
 ax3.legend(bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", borderaxespad=0, ncol=3)
