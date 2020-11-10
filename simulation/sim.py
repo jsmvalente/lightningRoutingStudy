@@ -73,16 +73,16 @@ for i in range(nSimulation):
     G = G.subgraph(largest_cc)
     print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
 
-    # Reduce number of labels to half so they're easier to visualize
-    nodes = list(G.nodes)
-    random.shuffle(nodes)
-    labelDic = dict(zip(nodes, nodes))
-    for i in range(0, int(len(nodes)/1.5)):
-        labelDic[nodes[i]] = ""
+    # # Reduce number of labels to half so they're easier to visualize
+    # nodes = list(G.nodes)
+    # random.shuffle(nodes)
+    # labelDic = dict(zip(nodes, nodes))
+    # for i in range(0, int(len(nodes)/1.5)):
+    #     labelDic[nodes[i]] = ""
 
-    # Visualize graph
-    nx.draw(G, with_labels=True, labels=labelDic, font_size=10, label="Leftover LN", node_color='#00b4d9', edge_color="gray")
-    plt.show()
+    # # Visualize graph
+    # nx.draw(G, with_labels=True, labels=labelDic, font_size=10, label="Leftover LN", node_color='#00b4d9', edge_color="gray")
+    # plt.show()
 
     # Create channel state balances
     balances = []
