@@ -6,8 +6,8 @@ class LNAddresses:
 
     def __init__(self):
         self.addressTree = tree.Tree()
-        self.addressesDic = {}
         self.lnAddressesDic = {}
+        self.addressesDic = {}
 
     def getNewRandomLNAddress(self):
 
@@ -20,7 +20,7 @@ class LNAddresses:
             if not self.addressTree.addressExists(randomAddress):
                 return randomAddress
 
-    def getAddressesDic(self):
+    def getLNAdressesDic(self):
         return self.lnAddressesDic
 
     def getNewRelatedLNAddress(self, neighbourAddress):
@@ -33,10 +33,10 @@ class LNAddresses:
             # Had an error while looking up a new address and the return was null
             return None
 
-    def addLNAddress(self, address, node):
-        self.addressTree.addAddress(address)
-        self.lnAddressesDic[node] = address
-        self.addressesDic[address] = node
+    def addLNAddress(self, lnAddress, node):
+        self.addressTree.addAddress(lnAddress)
+        self.addressesDic[lnAddress] = node
+        self.lnAddressesDic[node] = lnAddress
         # print("Address '" + address + "' added to the database.")
 
         return

@@ -7,15 +7,15 @@ import payment as pmt
 import random
 
 # Number of simulation runs
-nSimulation = 10
+nSimulation = 1
 # Number of payments in each simulation run
 nPayments = 200
 # Payments gaussian mean weight to be multiplied by average channel balance
-payments_mu_weight = 1
+payments_mu_weight = 0.1
 # Payemnts gaussian standard deviation
 payments_sigma_weight = payments_mu_weight/2
 # Number of nodes to have before stopping removing nodes
-nNodes = 600
+nNodes = 280
 # Number of routing gossip messages to be sent in-between payments
 nRoutingGossip = 10
 
@@ -73,9 +73,16 @@ for i in range(nSimulation):
     G = G.subgraph(largest_cc)
     print("Biggest component has " + str(G.number_of_nodes()) + " nodes.")
 
+    # Reduce number of labels to half so they're easier to visualize
+    nodes = list(G.nodes)
+    random.shuffle(nodes)
+    labelDic = dict(zip(nodes, nodes))
+    for i in range(0, int(len(nodes)/1.5)):
+        labelDic[nodes[i]] = ""
+
     # Visualize graph
-    # nx.draw(G, with_labels=True, font_size=8, label="Leftover LN")
-    # plt.show()
+    nx.draw(G, with_labels=True, labels=labelDic, font_size=10, label="Leftover LN", node_color='#00b4d9', edge_color="gray")
+    plt.show()
 
     # Create channel state balances
     balances = []
@@ -93,7 +100,6 @@ for i in range(nSimulation):
     payments_sigma = medianBalance*payments_sigma_weight
 
     # Simulate with n payments between two nodes
-    nodes = list(G.nodes)
     payments = pmt.createPayments(nPayments, nodes, payments_mu, payments_sigma)
     print("Simulating " + str(nPayments) + " payments")
 

@@ -18,7 +18,7 @@ class DistributedRouting:
         #           hop(nextHop, maxCapacity)
         #
         self.routingTables = defaultdict(dict)
-        self.addresses = LNAddresses.LNAddresses()
+        self.lnAddresses = LNAddresses.LNAddresses()
         self.channels = defaultdict(dict)
 
         # Start by giving each node an LN address
@@ -47,7 +47,7 @@ class DistributedRouting:
         nodeBlocks.sort(key=blockSort)
 
         # Setup the initial address for the first transaction manually and save it
-        self.addresses.addLNAddress("0.0.0.0", nodeBlocks[0]["firstNeighbourNode"])
+        self.lnAddresses.addLNAddress("0.0.0.0", nodeBlocks[0]["firstNeighbourNode"])
 
         # Get an LN address for each node
         for nodeBlock in nodeBlocks:
@@ -56,28 +56,28 @@ class DistributedRouting:
             nodeKey = nodeBlock["node"]
 
             # Assign the LN address to the neighbour node
-            neighbourAddress = self.addresses.getLNAddress(nodeBlock["firstNeighbourNode"])
+            neighbourAddress = self.lnAddresses.getLNAddress(nodeBlock["firstNeighbourNode"])
             # If the neighbour doesn't have an address yet get him a random one
             if not neighbourAddress:
-                neighbourAddress = self.addresses.getNewRandomLNAddress()
-                self.addresses.addLNAddress(neighbourAddress, nodeKey)
+                neighbourAddress = self.lnAddresses.getNewRandomLNAddress()
+                self.lnAddresses.addLNAddress(neighbourAddress, nodeKey)
 
             # Get an address related to our neighbour if we don't have one
-            if not self.addresses.getLNAddress(nodeKey):
+            if not self.lnAddresses.getLNAddress(nodeKey):
                 # Save this address
-                self.addresses.addLNAddress(self.addresses.getNewRelatedLNAddress(neighbourAddress), nodeKey)
-
+                self.lnAddresses.addLNAddress(self.lnAddresses.getNewRelatedLNAddress(neighbourAddress), nodeKey)
+                
         # Visualize graph with addresses
-        # nx.draw(G, with_labels=True, labels=self.addresses.getAddressesDic(), font_size=16, label="Leftover LN")
-        # plt.show()
+        nx.draw(G, with_labels=True, labels=self.lnAddresses.getLNAdressesDic(), font_size=16, label="Leftover LN", node_color='#00b4d9', edge_color="gray")
+        plt.show()
 
         # Add routing tables
         for node in nodes:
-            nodeAddress = self.addresses.getLNAddress(node)
+            nodeAddress = self.lnAddresses.getLNAddress(node)
 
             # Build the channels
             for neighbour, channelData in G[node].items():
-                neighbourNodeAddress = self.addresses.getLNAddress(neighbour)
+                neighbourNodeAddress = self.lnAddresses.getLNAddress(neighbour)
                 self.channels[nodeAddress][neighbourNodeAddress] = channelData[neighbour]
 
             self.addRoutingTable(nodeAddress)
@@ -183,8 +183,8 @@ class DistributedRouting:
     # If the path is not valid (not enough capacity) return 2. If the payment was successful then return 0.
     def simulatePayment(self, source, destination, amount):
 
-        sourceAddress = self.addresses.getLNAddress(source)
-        destinationAddress = self.addresses.getLNAddress(destination)
+        sourceAddress = self.lnAddresses.getLNAddress(source)
+        destinationAddress = self.lnAddresses.getLNAddress(destination)
 
         path = self.getRoutingPath(sourceAddress, destinationAddress)
 
